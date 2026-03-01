@@ -4,6 +4,7 @@ using CsvHelper.Configuration;
 using GameServer.Application;
 using GameServer.Application.Interfaces;
 using GameServer.Domain.Entities;
+using GameServer.Domain.Enums;
 using Microsoft.Extensions.Options;
 
 namespace GameServer.Infrastructure.Repositories;
@@ -25,7 +26,7 @@ public class CsvTelemetryRepository : ITelemetryRepository
 
     public async Task SaveAsync(TelemetryEvent telemetryEvent)
     {
-        var isConfederateMessage = telemetryEvent.Action == "CONFEDERATE MESSAGE";
+        var isConfederateMessage = telemetryEvent.Action == TelemetryAction.ConfederateMessage;
         var user = isConfederateMessage ? telemetryEvent.Confederate : telemetryEvent.User;
         var date = DateTime.UtcNow.ToString("yyyy-MM-dd");
         var filePath = Path.Combine(_logPath, $"telemetry_data_{user}_{date}.csv");
@@ -59,7 +60,7 @@ public class CsvTelemetryRepository : ITelemetryRepository
             {
                 User = telemetryEvent.User,
                 Confederate = telemetryEvent.Confederate ?? string.Empty,
-                Action = telemetryEvent.Action,
+                Action = telemetryEvent.Action.ToActionString(),
                 Text = telemetryEvent.Text ?? string.Empty,
                 Timestamp = telemetryEvent.Timestamp.ToString("O"),
                 X = telemetryEvent.X?.ToString() ?? string.Empty,

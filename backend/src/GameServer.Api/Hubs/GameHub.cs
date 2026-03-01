@@ -146,7 +146,7 @@ public class GameHub : Hub
         {
             User = _gameService.State.ParticipantName ?? "Unknown",
             Confederate = _gameService.State.ConfederateName,
-            Action = "next problem",
+            Action = TelemetryAction.NextProblem,
             Timestamp = DateTime.UtcNow
         });
 
@@ -227,7 +227,7 @@ public class GameHub : Hub
         {
             User = _gameService.State.ParticipantName ?? "Unknown",
             Confederate = _gameService.State.ConfederateName,
-            Action = "NEW GAME",
+            Action = TelemetryAction.NewGame,
             Timestamp = DateTime.UtcNow
         });
 
@@ -357,7 +357,7 @@ public class GameHub : Hub
         {
             User = data.User,
             Confederate = data.Confederate,
-            Action = data.Action,
+            Action = TelemetryActionExtensions.ParseActionString(data.Action),
             Text = data.Text,
             X = data.X,
             Y = data.Y,

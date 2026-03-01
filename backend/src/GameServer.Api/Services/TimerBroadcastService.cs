@@ -41,7 +41,7 @@ namespace GameServer.Api.Services
                 {
                     User = _gameService.State.ParticipantName ?? "Unknown",
                     Confederate = _gameService.State.ConfederateName,
-                    Action = "game resolved",
+                    Action = TelemetryAction.GameResolved,
                     Resolution = resolutionType.ToString(),
                     Answer = teamAnswer,
                     Timestamp = DateTime.UtcNow

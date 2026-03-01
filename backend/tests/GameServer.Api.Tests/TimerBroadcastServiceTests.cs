@@ -59,7 +59,7 @@ public class TimerBroadcastServiceTests
 
         // Assert
         await _telemetryRepository.Received(1).SaveAsync(Arg.Is<TelemetryEvent>(e =>
-            e.Action == "game resolved"));
+            e.Action == TelemetryAction.GameResolved));
     }
 
     [Fact]

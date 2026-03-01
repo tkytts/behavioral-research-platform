@@ -1,3 +1,5 @@
+using GameServer.Domain.Enums;
+
 namespace GameServer.Domain.Entities;
 
 /// <summary>
@@ -7,7 +9,7 @@ public class TelemetryEvent
 {
     public required string User { get; init; }
     public string? Confederate { get; init; }
-    public required string Action { get; init; }
+    public required TelemetryAction Action { get; init; }
     public string? Text { get; init; }
     public DateTime Timestamp { get; init; } = DateTime.UtcNow;
     public double? X { get; init; }

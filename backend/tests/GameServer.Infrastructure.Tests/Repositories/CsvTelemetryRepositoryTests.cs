@@ -1,6 +1,7 @@
 using FluentAssertions;
 using GameServer.Application;
 using GameServer.Domain.Entities;
+using GameServer.Domain.Enums;
 using GameServer.Infrastructure.Repositories;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -27,7 +28,7 @@ public class CsvTelemetryRepositoryTests : IDisposable
         {
             User = "TestUser",
             Confederate = "Confederate1",
-            Action = "test action",
+            Action = TelemetryAction.Edit,
             Text = "some text",
             Timestamp = DateTime.UtcNow
         };
@@ -44,8 +45,8 @@ public class CsvTelemetryRepositoryTests : IDisposable
     public async Task SaveAsync_AppendsToExistingFile()
     {
         // Arrange
-        var event1 = new TelemetryEvent { User = "TestUser", Action = "action1" };
-        var event2 = new TelemetryEvent { User = "TestUser", Action = "action2" };
+        var event1 = new TelemetryEvent { User = "TestUser", Action = TelemetryAction.Edit };
+        var event2 = new TelemetryEvent { User = "TestUser", Action = TelemetryAction.MessageSent };
 
         // Act
         await _sut.SaveAsync(event1);
@@ -55,8 +56,8 @@ public class CsvTelemetryRepositoryTests : IDisposable
         var files = Directory.GetFiles(_testLogPath, "*TestUser*.csv");
         files.Should().HaveCount(1);
         var content = await File.ReadAllTextAsync(files[0]);
-        content.Should().Contain("action1");
-        content.Should().Contain("action2");
+        content.Should().Contain("edit");
+        content.Should().Contain("message sent");
     }
 
     [Fact]
@@ -66,7 +67,7 @@ public class CsvTelemetryRepositoryTests : IDisposable
         var telemetryEvent = new TelemetryEvent
         {
             User = "TestUser",
-            Action = "test"
+            Action = TelemetryAction.Edit
         };
 
         // Act
@@ -90,7 +91,7 @@ public class CsvTelemetryRepositoryTests : IDisposable
         var telemetryEvent = new TelemetryEvent
         {
             User = "TestUser",
-            Action = "game resolved",
+            Action = TelemetryAction.GameResolved,
             Resolution = "AP",
             Answer = "the team answer"
         };
@@ -112,7 +113,7 @@ public class CsvTelemetryRepositoryTests : IDisposable
         {
             User = "Participant",
             Confederate = "Confederate1",
-            Action = "CONFEDERATE MESSAGE"
+            Action = TelemetryAction.ConfederateMessage
         };
 
         // Act
