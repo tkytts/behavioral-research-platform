@@ -4,7 +4,7 @@ using CsvHelper.Configuration;
 using GameServer.Application;
 using GameServer.Application.Interfaces;
 using GameServer.Domain.Entities;
-using GameServer.Domain.Enums;
+using GameServer.Domain.Constants;
 using Microsoft.Extensions.Options;
 
 namespace GameServer.Infrastructure.Repositories;
@@ -60,7 +60,7 @@ public class CsvTelemetryRepository : ITelemetryRepository
             {
                 User = telemetryEvent.User,
                 Confederate = telemetryEvent.Confederate ?? string.Empty,
-                Action = telemetryEvent.Action.ToActionString(),
+                Action = telemetryEvent.Action,
                 Text = telemetryEvent.Text ?? string.Empty,
                 Timestamp = telemetryEvent.Timestamp.ToString("O"),
                 X = telemetryEvent.X?.ToString() ?? string.Empty,

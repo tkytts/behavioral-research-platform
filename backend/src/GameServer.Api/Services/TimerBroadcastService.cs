@@ -1,6 +1,7 @@
 using GameServer.Api.Hubs;
 using GameServer.Application.DTOs;
 using GameServer.Application.Interfaces;
+using GameServer.Domain.Constants;
 using GameServer.Domain.Entities;
 using GameServer.Domain.Enums;
 using Microsoft.AspNetCore.SignalR;

@@ -1,5 +1,6 @@
 using GameServer.Application.DTOs;
 using GameServer.Application.Interfaces;
+using GameServer.Domain.Constants;
 using GameServer.Domain.Entities;
 using GameServer.Domain.Enums;
 using Microsoft.AspNetCore.SignalR;
@@ -357,7 +358,7 @@ public class GameHub : Hub
         {
             User = data.User,
             Confederate = data.Confederate,
-            Action = TelemetryActionExtensions.ParseActionString(data.Action),
+            Action = data.Action,
             Text = data.Text,
             X = data.X,
             Y = data.Y,

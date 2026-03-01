@@ -1,7 +1,7 @@
 using FluentAssertions;
 using GameServer.Application;
 using GameServer.Domain.Entities;
-using GameServer.Domain.Enums;
+using GameServer.Domain.Constants;
 using GameServer.Infrastructure.Repositories;
 using Microsoft.Extensions.Options;
 using Xunit;
