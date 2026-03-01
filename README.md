@@ -1,4 +1,4 @@
-﻿# Experiment Platform
+﻿# Problem-Solving Game Platform for Verbal Behavior Research (PSG-VBR)
 
 A full-stack application for running behavioral experiments with real-time communication. Built with React and .NET 8.
 
