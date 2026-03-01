@@ -79,6 +79,29 @@ public class CsvTelemetryRepositoryTests : IDisposable
         content.Should().Contain("Confederate");
         content.Should().Contain("Action");
         content.Should().Contain("Timestamp");
+        content.Should().Contain("Resolution");
+        content.Should().Contain("Answer");
+    }
+
+    [Fact]
+    public async Task SaveAsync_WritesAnswerToRow()
+    {
+        // Arrange
+        var telemetryEvent = new TelemetryEvent
+        {
+            User = "TestUser",
+            Action = "game resolved",
+            Resolution = "AP",
+            Answer = "the team answer"
+        };
+
+        // Act
+        await _sut.SaveAsync(telemetryEvent);
+
+        // Assert
+        var files = Directory.GetFiles(_testLogPath, "*TestUser*.csv");
+        var content = await File.ReadAllTextAsync(files[0]);
+        content.Should().Contain("the team answer");
     }
 
     [Fact]

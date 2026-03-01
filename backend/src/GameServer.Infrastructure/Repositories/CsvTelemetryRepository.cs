@@ -64,7 +64,8 @@ public class CsvTelemetryRepository : ITelemetryRepository
                 Timestamp = telemetryEvent.Timestamp.ToString("O"),
                 X = telemetryEvent.X?.ToString() ?? string.Empty,
                 Y = telemetryEvent.Y?.ToString() ?? string.Empty,
-                Resolution = telemetryEvent.Resolution ?? string.Empty
+                Resolution = telemetryEvent.Resolution ?? string.Empty,
+                Answer = telemetryEvent.Answer ?? string.Empty
             };
 
             csv.WriteRecord(record);
@@ -98,5 +99,6 @@ public class CsvTelemetryRepository : ITelemetryRepository
         public string X { get; init; } = string.Empty;
         public string Y { get; init; } = string.Empty;
         public string Resolution { get; init; } = string.Empty;
+        public string Answer { get; init; } = string.Empty;
     }
 }

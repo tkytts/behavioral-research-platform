@@ -43,6 +43,7 @@ namespace GameServer.Api.Services
                     Confederate = _gameService.State.ConfederateName,
                     Action = "game resolved",
                     Resolution = resolutionType.ToString(),
+                    Answer = teamAnswer,
                     Timestamp = DateTime.UtcNow
                 });
 

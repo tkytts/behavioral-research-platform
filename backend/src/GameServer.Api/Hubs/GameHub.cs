@@ -222,6 +222,15 @@ public class GameHub : Hub
     public async Task StartGame()
     {
         _gameService.StartGame();
+
+        await _telemetryRepository.SaveAsync(new TelemetryEvent
+        {
+            User = _gameService.State.ParticipantName ?? "Unknown",
+            Confederate = _gameService.State.ConfederateName,
+            Action = "NEW GAME",
+            Timestamp = DateTime.UtcNow
+        });
+
         await Clients.All.SendAsync("StatusUpdate", true);
         _logger.LogInformation("Game is live");
     }
