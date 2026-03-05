@@ -29,7 +29,17 @@ function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef }) {
   const [showResults, setShowResults] = useState(false);
   const [userInteracted, setUserInteracted] = useState(false);
   const { chimesConfig } = useChimesConfig();
-  const countdownAudioRef = useRef(new Audio("/sounds/countdown.mp3"));
+  const countdownAudioRef = useRef(null);
+
+  useEffect(() => {
+    const audio = new Audio("/sounds/countdown.mp3");
+    audio.preload = "auto";
+    countdownAudioRef.current = audio;
+    return () => {
+      audio.pause();
+      countdownAudioRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const handleUserInteraction = () => setUserInteracted(true);
@@ -93,12 +103,9 @@ function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef }) {
     if (chimesConfig?.timer && userInteracted) {
       const gameIsLive = currentBlock && currentProblem;
       if (gameIsLive && countdown <= 10) {
-        if (!countdownAudioRef.current) {
-          countdownAudioRef.current = new Audio("/sounds/countdown.mp3");
-        }
         countdownAudioRef.current.play().catch((error) => {
         });
-      } else if (countdownAudioRef.current) {
+      } else if (countdownAudioRef.current && !countdownAudioRef.current.paused) {
         countdownAudioRef.current.pause();
         countdownAudioRef.current.currentTime = 0;
       }

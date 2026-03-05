@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { I18nextProvider , initReactI18next } from 'react-i18next';
 import i18n from 'i18next';
@@ -53,6 +53,8 @@ testI18n.use(initReactI18next).init({
   interpolation: { escapeValue: false },
 });
 
+let mockAudio;
+
 const renderGameBox = (props = {}) => {
   const defaultProps = {
     isAdmin: false,
@@ -75,7 +77,19 @@ const renderGameBox = (props = {}) => {
 
 describe('GameBox', () => {
   beforeEach(() => {
+    mockAudio = {
+      play: jest.fn().mockResolvedValue(undefined),
+      pause: jest.fn(),
+      currentTime: 0,
+      preload: '',
+      paused: true,
+    };
+    jest.spyOn(window, 'Audio').mockImplementation(() => mockAudio);
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('renders the game box', () => {
@@ -169,4 +183,97 @@ describe('GameBox', () => {
     expect(screen.getByRole('button', { name: /stop timer/i })).toHaveClass('btn-danger');
     expect(screen.getByRole('button', { name: /reset timer/i })).toHaveClass('btn-secondary');
   });
+
+   describe('countdown audio', () => {
+      it('initializes Audio after mount with correct url and preload setting', () => {
+        renderGameBox();
+
+        expect(window.Audio).toHaveBeenCalledTimes(1);
+        expect(window.Audio).toHaveBeenCalledWith('/sounds/countdown.mp3');
+        expect(mockAudio.preload).toBe('auto');
+      });
+
+      it('pauses audio and clears ref on unmount', () => {
+        const { unmount } = renderGameBox();
+
+        unmount();
+
+        expect(mockAudio.pause).toHaveBeenCalled();
+      });
+
+      it('plays countdown audio when timer reaches 10 with game live and user interacted', () => {
+        renderGameBox();
+
+        fireEvent.click(document.body);
+
+        const problemUpdateHandler = gameModule.onProblemUpdate.mock.calls[0][0];
+        act(() => {
+          problemUpdateHandler({ block: { name: 'block1' }, problem: 'problem1' });
+        });
+
+        const timerUpdateHandler = gameModule.onTimerUpdate.mock.calls[0][0];
+        act(() => {
+          timerUpdateHandler(10);
+        });
+
+        expect(mockAudio.play).toHaveBeenCalled();
+      });
+
+      it('pauses countdown audio when timer goes above 10 and audio is playing', () => {
+        renderGameBox();
+        mockAudio.paused = false;
+
+        fireEvent.click(document.body);
+
+        const problemUpdateHandler = gameModule.onProblemUpdate.mock.calls[0][0];
+        act(() => {
+          problemUpdateHandler({ block: { name: 'block1' }, problem: 'problem1' });
+        });
+
+        const timerUpdateHandler = gameModule.onTimerUpdate.mock.calls[0][0];
+        act(() => {
+          timerUpdateHandler(15);
+        });
+
+        expect(mockAudio.pause).toHaveBeenCalled();
+        expect(mockAudio.currentTime).toBe(0);
+      });
+
+      it('does not call pause when timer is above 10 and audio is already paused', () => {
+        renderGameBox();
+        mockAudio.paused = true;
+
+        fireEvent.click(document.body);
+
+        const problemUpdateHandler = gameModule.onProblemUpdate.mock.calls[0][0];
+        act(() => {
+          problemUpdateHandler({ block: { name: 'block1' }, problem: 'problem1' });
+        });
+
+        const timerUpdateHandler = gameModule.onTimerUpdate.mock.calls[0][0];
+        act(() => {
+          timerUpdateHandler(15);
+        });
+
+        expect(mockAudio.pause).not.toHaveBeenCalled();
+      });
+
+      it('pauses and resets audio when stop timer button is clicked', () => {
+        renderGameBox({ isAdmin: true });
+
+        fireEvent.click(screen.getByRole('button', { name: /stop timer/i }));
+
+        expect(mockAudio.pause).toHaveBeenCalled();
+        expect(mockAudio.currentTime).toBe(0);
+      });
+
+      it('pauses and resets audio when reset timer button is clicked', () => {
+        renderGameBox({ isAdmin: true });
+
+        fireEvent.click(screen.getByRole('button', { name: /reset timer/i }));
+
+        expect(mockAudio.pause).toHaveBeenCalled();
+        expect(mockAudio.currentTime).toBe(0);
+      });
+    })
 });
