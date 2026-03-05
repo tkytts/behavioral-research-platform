@@ -340,17 +340,19 @@ function Tutorial() {
     <div className="container mt-4">
       <h1 className="text-center mb-4">{t("title")}</h1>
       {currentTutorialStep === 0 && (
-        <div className="mb-4" style={{ textAlign: "left" }}>
-          <p>{t("welcome")}</p>
-          <Trans i18nKey="tutorial_intro" components={{ p: <p /> }} />
-        </div>
-      )}
-      {currentTutorialStep === 0 && (
-        <div className="mb-4" style={{ textAlign: "center" }}>
-          <p>{t("start_tutorial")}</p>
-          <button className="btn btn-primary btn-narrow" onClick={handleTutorialStep1}>
-            {t("ready")}
-          </button>
+        <div className="row justify-content-center">
+          <div className="col-md-8">
+            <div className="mb-4">
+              <p>{t("welcome")}</p>
+              <Trans i18nKey="tutorial_intro" components={{ p: <p /> }} />
+            </div>
+            <div className="mb-4 text-center">
+              <p>{t("start_tutorial")}</p>
+              <button className="btn btn-primary btn-narrow" onClick={handleTutorialStep1}>
+                {t("ready")}
+              </button>
+            </div>
+          </div>
         </div>
       )}
       {currentTutorialStep === 1 && (

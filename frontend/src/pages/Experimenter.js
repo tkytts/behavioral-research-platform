@@ -212,18 +212,22 @@ function Experimenter() {
         <ChatBox currentUser={currentParticipant} isAdmin={true} disabled={false} />
         <GameBox isAdmin={true} />
       </div>
-      <button className="btn btn-primary" onClick={openGameConfigModal}>
-        {t("start_game")}
-      </button>
-      <button className="btn btn-warning m-3" onClick={openResolutionModal}>
-        {t("resolve_game")}
-      </button>
-      <button className="btn btn-secondary" onClick={onNextProblemClick}>
-        {t("next_problem")}
-      </button>
-      <button className="btn btn-danger m-3" onClick={handleEndSession}>
-        {t("end_collection")}
-      </button>
+      <div className="row">
+        <div className="col-md-6 mt-3">
+          <button className="btn btn-primary" onClick={openGameConfigModal}>
+            {t("start_game")}
+          </button>
+          <button className="btn btn-warning m-3" onClick={openResolutionModal}>
+            {t("resolve_game")}
+          </button>
+          <button className="btn btn-secondary" onClick={onNextProblemClick}>
+            {t("next_problem")}
+          </button>
+          <button className="btn btn-danger m-3" onClick={handleEndSession}>
+            {t("end_collection")}
+          </button>
+        </div>
+      </div>
       {collectionEnded && (
         <div className="alert alert-success alert-dismissible mt-3" role="alert">
           {t("collection_ended_feedback")}
