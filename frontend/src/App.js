@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Navigate, Route, Routes } from "react-router-dom";
 
 import ErrorBoundary from "./components/ErrorBoundary";
 import FontSizeControls from "./components/FontSizeControls";
@@ -28,6 +28,7 @@ function App() {
             <Route path="/tutorial" element={<Tutorial />} />
             <Route path="/experimenter" element={<Experimenter />} />
             <Route path="/participant" element={<Participant />} />
+            <Route path="/" element={<Navigate to="/tutorial" replace />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>
