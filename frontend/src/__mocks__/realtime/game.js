@@ -32,6 +32,7 @@ export const onReconnected = jest.fn();
 export const startGame = jest.fn().mockResolvedValue(undefined);
 export const blockFinished = jest.fn().mockResolvedValue(undefined);
 export const gameEnded = jest.fn().mockResolvedValue(undefined);
+export const stopGame = jest.fn().mockResolvedValue(undefined);
 export const nextProblem = jest.fn().mockResolvedValue(undefined);
 export const resetTimer = jest.fn().mockResolvedValue(undefined);
 export const startTimer = jest.fn().mockResolvedValue(undefined);

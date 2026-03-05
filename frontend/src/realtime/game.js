@@ -83,6 +83,7 @@ export const onReconnected = (handler) => {
 export const startGame = () => invokeWhenReady("StartGame");
 export const blockFinished = () => invokeWhenReady("BlockFinished");
 export const gameEnded = () => invokeWhenReady("GameEnded");
+export const stopGame = () => invokeWhenReady("StopGame");
 
 // Problem cycle
 export const nextProblem = () => invokeWhenReady("NextProblem");

@@ -100,5 +100,8 @@
     "n_seconds_left": "{{count}} seconds left",
     "1_second_left": "1 second left",
     "error_boundary_message": "Something went wrong.",
-    "problem": "Problem"
+    "problem": "Problem",
+    "end_collection": "End Session",
+    "end_collection_confirm": "End session? The chat log will be saved and the session will be closed.",
+    "collection_ended_feedback": "Session ended. Data saved."
 }

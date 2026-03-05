@@ -100,5 +100,8 @@
     "n_seconds_left": "Restam {{count}} segundos",
     "1_second_left": "Resta 1 segundo",
     "error_boundary_message": "Algo deu errado.",
-    "problem": "Problema"
+    "problem": "Problema",
+    "end_collection": "Encerrar Sessão",
+    "end_collection_confirm": "Encerrar sessão? O log do chat será salvo e a sessão será encerrada.",
+    "collection_ended_feedback": "Sessão encerrada. Dados salvos."
 }

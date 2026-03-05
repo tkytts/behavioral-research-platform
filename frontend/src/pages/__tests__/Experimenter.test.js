@@ -57,6 +57,8 @@ jest.mock('../../realtime/game', () => ({
   clearChat: jest.fn(),
   blockFinished: jest.fn(),
   gameEnded: jest.fn(),
+  stopGame: jest.fn(),
+  telemetryEvent: jest.fn(),
   setGameResolution: jest.fn(),
 }));
 
@@ -261,8 +263,7 @@ describe('Experimenter Component', () => {
     it('should advance problem when next problem button is clicked', async () => {
       renderWithProviders(<Experimenter />);
 
-      const buttons = screen.getAllByRole('button');
-      const nextButton = buttons[buttons.length - 1]; // Last button
+      const nextButton = screen.getByRole('button', { name: /next_problem/i });
 
       await userEvent.click(nextButton);
 
@@ -272,8 +273,7 @@ describe('Experimenter Component', () => {
     it('should reset and start timer for new problem', async () => {
       renderWithProviders(<Experimenter />);
 
-      const buttons = screen.getAllByRole('button');
-      const nextButton = buttons[buttons.length - 1];
+      const nextButton = screen.getByRole('button', { name: /next_problem/i });
 
       await userEvent.click(nextButton);
 
@@ -354,6 +354,112 @@ describe('Experimenter Component', () => {
       await waitFor(() => {
         const checkboxes = screen.getAllByRole('checkbox');
         expect(checkboxes[0]).toBeChecked();
+      });
+    });
+  });
+
+  describe('End Session Button', () => {
+    let confirmSpy;
+
+    beforeEach(() => {
+      confirmSpy = jest.spyOn(window, 'confirm');
+    });
+
+    afterEach(() => {
+      confirmSpy.mockRestore();
+    });
+
+    it('should render the End Session button', () => {
+      renderWithProviders(<Experimenter />);
+      expect(screen.getByRole('button', { name: /end session/i })).toBeInTheDocument();
+    });
+
+    it('should not show feedback alert before clicking the button', () => {
+      renderWithProviders(<Experimenter />);
+      expect(screen.queryByText('Session ended. Data saved.')).not.toBeInTheDocument();
+    });
+
+    it('should not call any hub methods when confirm is cancelled', async () => {
+      confirmSpy.mockReturnValue(false);
+      renderWithProviders(<Experimenter />);
+
+      await userEvent.click(screen.getByRole('button', { name: /end session/i }));
+
+      expect(mockFunctions.stopGame).not.toHaveBeenCalled();
+      expect(mockFunctions.clearChat).not.toHaveBeenCalled();
+      expect(mockFunctions.telemetryEvent).not.toHaveBeenCalled();
+      expect(mockFunctions.gameEnded).not.toHaveBeenCalled();
+    });
+
+    it('should not show feedback alert when confirm is cancelled', async () => {
+      confirmSpy.mockReturnValue(false);
+      renderWithProviders(<Experimenter />);
+
+      await userEvent.click(screen.getByRole('button', { name: /end session/i }));
+
+      expect(screen.queryByText('Session ended. Data saved.')).not.toBeInTheDocument();
+    });
+
+    it('should call stopGame when confirm is accepted', async () => {
+      confirmSpy.mockReturnValue(true);
+      renderWithProviders(<Experimenter />);
+
+      await userEvent.click(screen.getByRole('button', { name: /end session/i }));
+
+      expect(mockFunctions.stopGame).toHaveBeenCalled();
+    });
+
+    it('should call clearChat when confirm is accepted', async () => {
+      confirmSpy.mockReturnValue(true);
+      renderWithProviders(<Experimenter />);
+
+      await userEvent.click(screen.getByRole('button', { name: /end session/i }));
+
+      expect(mockFunctions.clearChat).toHaveBeenCalled();
+    });
+
+    it('should call telemetryEvent with CollectionEnded when confirm is accepted', async () => {
+      confirmSpy.mockReturnValue(true);
+      renderWithProviders(<Experimenter />);
+
+      await userEvent.click(screen.getByRole('button', { name: /end session/i }));
+
+      expect(mockFunctions.telemetryEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'CollectionEnded' })
+      );
+    });
+
+    it('should call gameEnded when confirm is accepted', async () => {
+      confirmSpy.mockReturnValue(true);
+      renderWithProviders(<Experimenter />);
+
+      await userEvent.click(screen.getByRole('button', { name: /end session/i }));
+
+      expect(mockFunctions.gameEnded).toHaveBeenCalled();
+    });
+
+    it('should call stopGame before clearChat, and clearChat before gameEnded', async () => {
+      confirmSpy.mockReturnValue(true);
+      const callOrder = [];
+      mockFunctions.stopGame.mockImplementation(() => { callOrder.push('stopGame'); });
+      mockFunctions.clearChat.mockImplementation(() => { callOrder.push('clearChat'); });
+      mockFunctions.gameEnded.mockImplementation(() => { callOrder.push('gameEnded'); });
+
+      renderWithProviders(<Experimenter />);
+      await userEvent.click(screen.getByRole('button', { name: /end session/i }));
+
+      expect(callOrder.indexOf('stopGame')).toBeLessThan(callOrder.indexOf('clearChat'));
+      expect(callOrder.indexOf('clearChat')).toBeLessThan(callOrder.indexOf('gameEnded'));
+    });
+
+    it('should show feedback alert after confirm is accepted', async () => {
+      confirmSpy.mockReturnValue(true);
+      renderWithProviders(<Experimenter />);
+
+      await userEvent.click(screen.getByRole('button', { name: /end session/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Session ended. Data saved.')).toBeInTheDocument();
       });
     });
   });

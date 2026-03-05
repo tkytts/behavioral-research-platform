@@ -23,6 +23,8 @@ import {
   clearChat,
   blockFinished,
   gameEnded,
+  stopGame,
+  telemetryEvent,
   setGameResolution
 } from "../realtime/game";
 import { RESOLUTION_TYPES } from "../constants/resolutionTypes";
@@ -44,6 +46,7 @@ function Experimenter() {
   const [currentParticipant, setCurrentParticipant] = useState(null);
   const [showTutorialCompleteModal, setShowTutorialCompleteModal] = useState(false);
   const [numTries, setNumTries] = useState(1);
+  const [collectionEnded, setCollectionEnded] = useState(false);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -181,6 +184,15 @@ function Experimenter() {
     closeGameConfigModal();
   };
 
+  const handleEndSession = () => {
+    if (!window.confirm(t("end_collection_confirm"))) return;
+    stopGame();
+    clearChat();
+    telemetryEvent({ action: "CollectionEnded", user: currentParticipant });
+    gameEnded();
+    setCollectionEnded(true);
+  };
+
   const resolveGame = (gameResolutionType) => {
     let isTimeoutResolution = gameResolutionType === RESOLUTION_TYPES.TNP;
 
@@ -209,6 +221,15 @@ function Experimenter() {
       <button className="btn btn-secondary" onClick={onNextProblemClick}>
         {t("next_problem")}
       </button>
+      <button className="btn btn-danger m-3" onClick={handleEndSession}>
+        {t("end_collection")}
+      </button>
+      {collectionEnded && (
+        <div className="alert alert-success alert-dismissible mt-3" role="alert">
+          {t("collection_ended_feedback")}
+          <button type="button" className="btn-close" onClick={() => setCollectionEnded(false)} />
+        </div>
+      )}
 
       {showGameConfigModal && (
         <Modal>

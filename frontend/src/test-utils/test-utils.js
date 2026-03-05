@@ -49,6 +49,8 @@ testI18n.use(initReactI18next).init({
         the_answer_is_triangle: 'The answer is triangle',
         yes_i_think_you_are_right: 'Yes, I think you are right',
         triangle: 'Triangle',
+        end_collection: 'End Session',
+        collection_ended_feedback: 'Session ended. Data saved.',
       },
     },
   },
