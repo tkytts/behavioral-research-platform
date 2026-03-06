@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using CsvHelper;
 using CsvHelper.Configuration;
@@ -16,7 +17,7 @@ namespace GameServer.Infrastructure.Repositories;
 public class CsvTelemetryRepository : ITelemetryRepository
 {
     private readonly string _logPath;
-    private readonly SemaphoreSlim _writeLock = new(1, 1);
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _fileLocks = new();
 
     public CsvTelemetryRepository(IOptions<GameSettings> settings)
     {
@@ -27,11 +28,14 @@ public class CsvTelemetryRepository : ITelemetryRepository
     public async Task SaveAsync(TelemetryEvent telemetryEvent)
     {
         var isConfederateMessage = telemetryEvent.Action == TelemetryAction.ConfederateMessage;
-        var user = isConfederateMessage ? telemetryEvent.Confederate : telemetryEvent.User;
+        var user = isConfederateMessage
+            ? (telemetryEvent.Confederate ?? telemetryEvent.User)
+            : telemetryEvent.User;
         var date = DateTime.UtcNow.ToString("yyyy-MM-dd");
-        var filePath = Path.Combine(_logPath, $"telemetry_data_{user}_{date}.csv");
+        var filePath = Path.Combine(_logPath, $"telemetry_data_{SanitizeForFilename(user)}_{date}.csv");
 
-        await _writeLock.WaitAsync();
+        var fileLock = _fileLocks.GetOrAdd(filePath, _ => new SemaphoreSlim(1, 1));
+        await fileLock.WaitAsync();
         try
         {
             var fileExists = File.Exists(filePath);
@@ -74,10 +78,24 @@ public class CsvTelemetryRepository : ITelemetryRepository
         }
         finally
         {
-            _writeLock.Release();
+            fileLock.Release();
         }
     }
 
+
+    private static string SanitizeForFilename(string? name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return "unknown";
+
+        var invalid = Path.GetInvalidFileNameChars()
+            .Concat(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar })
+            .ToHashSet();
+
+        return new string(name.Where(c => !invalid.Contains(c)).ToArray())
+            .Replace("..", string.Empty)
+            .Trim();
+    }
 
     private void EnsureDirectoryExists()
     {

@@ -124,6 +124,46 @@ public class CsvTelemetryRepositoryTests : IDisposable
         files.Should().NotBeEmpty();
     }
 
+    [Fact]
+    public async Task SaveAsync_SanitizesPathTraversal_InUsername()
+    {
+        // Arrange
+        var telemetryEvent = new TelemetryEvent
+        {
+            User = "../../evil",
+            Action = TelemetryAction.Edit,
+            Timestamp = DateTime.UtcNow
+        };
+
+        // Act
+        await _sut.SaveAsync(telemetryEvent);
+
+        // Assert
+        var files = Directory.GetFiles(_testLogPath, "*.csv");
+        files.Should().NotBeEmpty();
+        files.Should().AllSatisfy(f => f.Should().StartWith(_testLogPath));
+    }
+
+    [Fact]
+    public async Task SaveAsync_ConfederateMessage_NullConfederate_FallsBackToUser()
+    {
+        // Arrange
+        var telemetryEvent = new TelemetryEvent
+        {
+            User = "Participant",
+            Confederate = null,
+            Action = TelemetryAction.ConfederateMessage,
+            Timestamp = DateTime.UtcNow
+        };
+
+        // Act
+        await _sut.SaveAsync(telemetryEvent);
+
+        // Assert
+        var files = Directory.GetFiles(_testLogPath, "*Participant*.csv");
+        files.Should().NotBeEmpty();
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_testLogPath))

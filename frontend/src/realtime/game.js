@@ -118,7 +118,10 @@ export const getChimes = () => invokeWhenReady("GetChimes");
 export const setGameResolution = (payload) => invokeWhenReady("SetGameResolution", payload);
 
 // Telemetry
-export const telemetryEvent = (payload) => invokeWhenReady("TelemetryEvent", payload);
+export const telemetryEvent = (payload) =>
+  invokeWhenReady("TelemetryEvent", payload).catch((e) =>
+    console.error("Telemetry error:", e)
+  );
 
 // Export connectionReady for components that need to wait
 export { connectionReady };

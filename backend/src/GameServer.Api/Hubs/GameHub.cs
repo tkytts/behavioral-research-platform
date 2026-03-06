@@ -363,7 +363,7 @@ public class GameHub : Hub
             X = data.X,
             Y = data.Y,
             Resolution = data.Resolution,
-            Timestamp = DateTime.UtcNow
+            Timestamp = data.Timestamp ?? DateTime.UtcNow
         });
     }
 

@@ -54,4 +54,5 @@ public record TelemetryEventDto(
     string? Text,
     double? X = null,
     double? Y = null,
-    string? Resolution = null);
+    string? Resolution = null,
+    DateTime? Timestamp = null);
