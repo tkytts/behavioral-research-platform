@@ -72,9 +72,10 @@ function Tutorial() {
     activeTimersRef.current = [];
   };
 
-  useEffect(() => {
-    currentUserRef.current = currentUser;
+  // Keep ref in sync on every render so closures always see the latest value
+  currentUserRef.current = currentUser;
 
+  useEffect(() => {
     const handleStatus = (isLive) => {
       if (isLive) {
         clearAllTimers();
@@ -88,7 +89,7 @@ function Tutorial() {
       offStatusUpdate(handleStatus);
       clearAllTimers();
     };
-  }, [currentUser, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [navigate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTutorialStep1 = () => {
     setCurrentUser(t("your_name"));
