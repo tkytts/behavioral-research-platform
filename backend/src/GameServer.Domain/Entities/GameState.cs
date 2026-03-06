@@ -10,16 +10,76 @@ public class GameState
 {
     private readonly object _lock = new();
 
-    public List<Message> Messages { get; private set; } = new();
-    public string? ParticipantName { get; set; }
-    public string? ConfederateName { get; set; }
-    public int CurrentScore { get; private set; }
-    public int? CurrentBlockIndex { get; private set; }
-    public int? CurrentProblemIndex { get; private set; }
-    public bool IsLive { get; private set; }
-    public ChimesConfig? ChimesConfig { get; set; }
-    public GameResolutionType? PendingResolutionType { get; set; }
-    public string? TeamAnswer { get; set; }
+    private List<Message> _messages = new();
+    private string? _participantName;
+    private string? _confederateName;
+    private int _currentScore;
+    private int? _currentBlockIndex;
+    private int? _currentProblemIndex;
+    private bool _isLive;
+    private ChimesConfig? _chimesConfig;
+    private GameResolutionType? _pendingResolutionType;
+    private string? _teamAnswer;
+
+    public List<Message> Messages
+    {
+        get { lock (_lock) { return _messages; } }
+        private set { _messages = value; }
+    }
+
+    public string? ParticipantName
+    {
+        get { lock (_lock) { return _participantName; } }
+        set { lock (_lock) { _participantName = value; } }
+    }
+
+    public string? ConfederateName
+    {
+        get { lock (_lock) { return _confederateName; } }
+        set { lock (_lock) { _confederateName = value; } }
+    }
+
+    public int CurrentScore
+    {
+        get { lock (_lock) { return _currentScore; } }
+        private set { _currentScore = value; }
+    }
+
+    public int? CurrentBlockIndex
+    {
+        get { lock (_lock) { return _currentBlockIndex; } }
+        private set { _currentBlockIndex = value; }
+    }
+
+    public int? CurrentProblemIndex
+    {
+        get { lock (_lock) { return _currentProblemIndex; } }
+        private set { _currentProblemIndex = value; }
+    }
+
+    public bool IsLive
+    {
+        get { lock (_lock) { return _isLive; } }
+        private set { _isLive = value; }
+    }
+
+    public ChimesConfig? ChimesConfig
+    {
+        get { lock (_lock) { return _chimesConfig; } }
+        set { lock (_lock) { _chimesConfig = value; } }
+    }
+
+    public GameResolutionType? PendingResolutionType
+    {
+        get { lock (_lock) { return _pendingResolutionType; } }
+        set { lock (_lock) { _pendingResolutionType = value; } }
+    }
+
+    public string? TeamAnswer
+    {
+        get { lock (_lock) { return _teamAnswer; } }
+        set { lock (_lock) { _teamAnswer = value; } }
+    }
 
     /// <summary>
     /// Adds a message to the chat history.
@@ -50,7 +110,7 @@ public class GameState
     /// </summary>
     public void Start()
     {
-        IsLive = true;
+        lock (_lock) { _isLive = true; }
     }
 
     /// <summary>
@@ -58,7 +118,7 @@ public class GameState
     /// </summary>
     public void Stop()
     {
-        IsLive = false;
+        lock (_lock) { _isLive = false; }
     }
 
     /// <summary>
@@ -66,8 +126,11 @@ public class GameState
     /// </summary>
     public void SetProblemSelection(int blockIndex, int problemIndex)
     {
-        CurrentBlockIndex = blockIndex;
-        CurrentProblemIndex = problemIndex;
+        lock (_lock)
+        {
+            _currentBlockIndex = blockIndex;
+            _currentProblemIndex = problemIndex;
+        }
     }
 
     /// <summary>
@@ -75,8 +138,11 @@ public class GameState
     /// </summary>
     public void FirstBlock()
     {
-        CurrentBlockIndex = 0;
-        CurrentProblemIndex = 0;
+        lock (_lock)
+        {
+            _currentBlockIndex = 0;
+            _currentProblemIndex = 0;
+        }
     }
 
     /// <summary>
@@ -84,8 +150,11 @@ public class GameState
     /// </summary>
     public void NextBlock()
     {
-        CurrentBlockIndex = CurrentBlockIndex >= 0 ? CurrentBlockIndex + 1 : 0;
-        CurrentProblemIndex = 0;
+        lock (_lock)
+        {
+            _currentBlockIndex = _currentBlockIndex >= 0 ? _currentBlockIndex + 1 : 0;
+            _currentProblemIndex = 0;
+        }
     }
 
     /// <summary>
@@ -94,10 +163,13 @@ public class GameState
     /// <param name="maxProblems">Maximum number of problems in a block (default 5).</param>
     public void NextProblem(int maxProblems = 5)
     {
-        if (CurrentProblemIndex.HasValue && CurrentProblemIndex < maxProblems - 1)
-            CurrentProblemIndex++;
-        else
-            CurrentProblemIndex = 0;
+        lock (_lock)
+        {
+            if (_currentProblemIndex.HasValue && _currentProblemIndex < maxProblems - 1)
+                _currentProblemIndex++;
+            else
+                _currentProblemIndex = 0;
+        }
     }
 
     /// <summary>
@@ -107,7 +179,7 @@ public class GameState
     {
         lock (_lock)
         {
-            CurrentScore += points;
+            _currentScore += points;
         }
     }
 
@@ -118,7 +190,7 @@ public class GameState
     {
         lock (_lock)
         {
-            CurrentScore = 0;
+            _currentScore = 0;
         }
     }
 
@@ -129,13 +201,13 @@ public class GameState
     {
         lock (_lock)
         {
-            Messages = new List<Message>();
-            CurrentScore = 0;
-            CurrentBlockIndex = null;
-            CurrentProblemIndex = null;
-            IsLive = false;
-            PendingResolutionType = null;
-            TeamAnswer = null;
+            _messages = new List<Message>();
+            _currentScore = 0;
+            _currentBlockIndex = null;
+            _currentProblemIndex = null;
+            _isLive = false;
+            _pendingResolutionType = null;
+            _teamAnswer = null;
         }
     }
 }

@@ -29,7 +29,9 @@ if (!connection.emit) {
   connection.emit = connection.invoke.bind(connection);
 }
 
-// Export the start promise so consumers can await connection readiness
-export const connectionReady = startPromise;
+// Export a promise that resolves when the connection is ready.
+// Swallow the rejection here so callers fall through to connection.invoke,
+// which already has retry logic for failed starts.
+export const connectionReady = startPromise.catch(() => {});
 
 export default connection;

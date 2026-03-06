@@ -87,13 +87,13 @@ describe('connection module', () => {
     expect(connection.emit).toBeDefined();
   });
 
-  it('rejects connectionReady on connection error', async () => {
+  it('resolves connectionReady even on connection error (retry handled by invoke)', async () => {
     const error = new Error('Connection failed');
     mockStart.mockRejectedValueOnce(error);
 
     const { connectionReady } = require('../connection');
 
-    await expect(connectionReady).rejects.toThrow('Connection failed');
+    await expect(connectionReady).resolves.toBeUndefined();
   });
 
   describe('invoke override', () => {

@@ -49,6 +49,8 @@ function Experimenter() {
   const [collectionEnded, setCollectionEnded] = useState(false);
   const { t } = useTranslation();
 
+  const MAX_PROBLEMS_PER_BLOCK = 5;
+
   useEffect(() => {
     const handleDone = (tries) => {
       setNumTries(tries);
@@ -97,7 +99,7 @@ function Experimenter() {
     clearAnswer();
     setTeamAnswer("");
 
-    if (currentProblem === 4) {
+    if (currentProblem === MAX_PROBLEMS_PER_BLOCK - 1) {
       resetTimer();
       stopTimer();
       setCurrentProblem(0);
@@ -177,7 +179,7 @@ function Experimenter() {
     });
     updateProblemSelection({
       blockIndex: confederateBlock,
-      problemIndex: currentProblem
+      problemIndex: 0
     });
     clearChat();
 

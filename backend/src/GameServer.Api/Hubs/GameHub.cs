@@ -209,7 +209,7 @@ public class GameHub : Hub
     public async Task SetMaxTime(int time)
     {
         _timerService.MaxTime = time;
-        await Clients.All.SendAsync("TimerUpdate", time);
+        await Clients.All.SendAsync("TimerUpdate", _timerService.CurrentCountdown);
         _logger.LogInformation("Max time set to: {Time}", time);
     }
 
@@ -338,7 +338,7 @@ public class GameHub : Hub
         if (config is not null)
         {
             var dto = new ChimesConfigDto(config.MessageSent, config.MessageReceived, config.Timer);
-            await Clients.All.SendAsync("ChimesUpdated", dto);
+            await Clients.Caller.SendAsync("ChimesUpdated", dto);
             _logger.LogInformation(
                 "Chimes config propagated - MessageSent: {Sent}, MessageReceived: {Received}, Timer: {Timer}",
                 config.MessageSent, config.MessageReceived, config.Timer);

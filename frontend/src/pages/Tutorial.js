@@ -49,13 +49,35 @@ function Tutorial() {
   const pointsRef = useRef(null);
   const teamAnswerRef = useRef(null);
   const readyButtonRef = useRef(null);
+  const activeTimersRef = useRef([]);
   const { t } = useTranslation();
+
+  const safeTimeout = (fn, delay) => {
+    const id = setTimeout(fn, delay);
+    activeTimersRef.current.push({ type: "timeout", id });
+    return id;
+  };
+
+  const safeInterval = (fn, delay) => {
+    const id = setInterval(fn, delay);
+    activeTimersRef.current.push({ type: "interval", id });
+    return id;
+  };
+
+  const clearAllTimers = () => {
+    activeTimersRef.current.forEach(({ type, id }) => {
+      if (type === "timeout") clearTimeout(id);
+      else clearInterval(id);
+    });
+    activeTimersRef.current = [];
+  };
 
   useEffect(() => {
     currentUserRef.current = currentUser;
 
     const handleStatus = (isLive) => {
       if (isLive) {
+        clearAllTimers();
         navigate("/participant");
       }
     };
@@ -64,8 +86,9 @@ function Tutorial() {
 
     return () => {
       offStatusUpdate(handleStatus);
+      clearAllTimers();
     };
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTutorialStep1 = () => {
     setCurrentUser(t("your_name"));
@@ -85,29 +108,29 @@ function Tutorial() {
     setCurrentTutorialStep(11);
     setConfederate(simulationConfederate);
     setCurrentUser(t("tutorial_participant_1"));
-    tutorialProblem({ block: { Name: "T_1" }, problem: "1" });
+    tutorialProblem({ block: { name: "T_1" }, problem: "1" });
 
-    setTimeout(() => {
+    safeTimeout(() => {
       readyButtonRef.current.classList.add("click-animation");
 
-      setTimeout(() => {
+      safeTimeout(() => {
         readyButtonRef.current.classList.remove("click-animation");
-        setTimeout(() => {
+        safeTimeout(() => {
           setCurrentTutorialStep(12);
         }, 200);
 
         startTimer();
 
-        setTimeout(() => {
+        safeTimeout(() => {
           typing(simulationConfederate);
-          setTimeout(() => {
+          safeTimeout(() => {
             sendMessage({
               user: simulationConfederate,
               text: t("what_do_you_think"),
               timeStamp: new Date().toISOString()
             });
             stopTimer();
-            setTimeout(() => {
+            safeTimeout(() => {
               setCurrentTutorialStep(13);
             }, 2000);
           }, 1000);
@@ -123,24 +146,24 @@ function Tutorial() {
     setCurrentTutorialStep(14);
     handleTutorialMessage(t("the_answer_is_triangle"));
 
-    setTimeout(() => {
+    safeTimeout(() => {
       typing(simulationConfederate);
       setMaxTime(33);
       startTimer();
-      setTimeout(() => {
+      safeTimeout(() => {
         sendMessage({
           user: simulationConfederate,
           text: t("yes_i_think_you_are_right"),
           timeStamp: new Date().toISOString()
         });
 
-        setTimeout(() => {
+        safeTimeout(() => {
           setAnswer(t("triangle"));
           setGameResolution({ gameResolutionType: RESOLUTION_TYPES.AP, teamAnswer: t("triangle") });
           setMaxTime(11);
           startTimer();
 
-          setTimeout(() => {
+          safeTimeout(() => {
             setCurrentTutorialStep(15);
           }, 25000);
         }, 3000);
@@ -157,29 +180,29 @@ function Tutorial() {
     setCurrentTutorialStep(16);
     setConfederate(simulationConfederate);
     setCurrentUser(t("tutorial_participant_2"));
-    tutorialProblem({ block: { Name: "T_1" }, Problem: "2" });
+    tutorialProblem({ block: { name: "T_1" }, problem: "2" });
 
-    setTimeout(() => {
+    safeTimeout(() => {
       readyButtonRef.current.classList.add("click-animation");
 
-      setTimeout(() => {
+      safeTimeout(() => {
         readyButtonRef.current.classList.remove("click-animation");
-        setTimeout(() => {
+        safeTimeout(() => {
           setCurrentTutorialStep(12);
         }, 200);
 
         startTimer();
 
-        setTimeout(() => {
+        safeTimeout(() => {
           typing(simulationConfederate);
-          setTimeout(() => {
+          safeTimeout(() => {
             sendMessage({
               user: simulationConfederate,
               text: t("which_option"),
               timeStamp: new Date().toISOString()
             });
             stopTimer();
-            setTimeout(() => {
+            safeTimeout(() => {
               setCurrentTutorialStep(17);
             }, 2000);
           }, 1000);
@@ -195,24 +218,24 @@ function Tutorial() {
     setCurrentTutorialStep(18);
     handleTutorialMessage(t("i_think_the_answer_is_11"));
 
-    setTimeout(() => {
+    safeTimeout(() => {
       typing(simulationConfederate);
       setMaxTime(33);
       startTimer();
-      setTimeout(() => {
+      safeTimeout(() => {
         sendMessage({
           user: simulationConfederate,
           text: t("i_disagree_i_think_its_12"),
           timeStamp: new Date().toISOString()
         });
 
-        setTimeout(() => {
+        safeTimeout(() => {
           setAnswer("12");
           setGameResolution({ gameResolutionType: RESOLUTION_TYPES.DNP, teamAnswer: "12" });
           setMaxTime(11);
           startTimer();
 
-          setTimeout(() => {
+          safeTimeout(() => {
             setCurrentTutorialStep(19);
           }, 25000);
         }, 3000);
@@ -227,22 +250,22 @@ function Tutorial() {
     setCurrentTutorialStep(20);
     setConfederate(simulationConfederate);
     setCurrentUser(t("tutorial_participant_3"));
-    tutorialProblem({ block: { Name: "T_1" }, Problem: "3" });
+    tutorialProblem({ block: { name: "T_1" }, problem: "3" });
   };
 
   const handleTutorialStep20 = () => {
     setCurrentTutorialStep(21);
     const simulationConfederate = t("tutorial_confederate_3");
     typing(simulationConfederate);
-    setTimeout(() => {
+    safeTimeout(() => {
       typing(simulationConfederate);
-      setTimeout(() => {
+      safeTimeout(() => {
         sendMessage({
           user: simulationConfederate,
           text: t("what_do_you_think"),
           timeStamp: new Date().toISOString()
         });
-        setTimeout(() => {
+        safeTimeout(() => {
           setCurrentTutorialStep(22);
         }, 2000);
       }, 1000);
@@ -305,7 +328,7 @@ function Tutorial() {
     const characters = originalMessage.split("");
     let index = 0;
 
-    const intervalId = setInterval(() => {
+    const intervalId = safeInterval(() => {
       newMsg += characters[index];
       setNewMessage(newMsg);
 
@@ -314,14 +337,18 @@ function Tutorial() {
       if (index >= characters.length) {
         clearInterval(intervalId);
 
-        setTimeout(() => {
-          sendButtonRef.current.classList.add("click-animation");
+        safeTimeout(() => {
+          if (sendButtonRef.current) {
+            sendButtonRef.current.classList.add("click-animation");
+          }
 
-          setTimeout(() => {
-            sendButtonRef.current.classList.remove("click-animation");
+          safeTimeout(() => {
+            if (sendButtonRef.current) {
+              sendButtonRef.current.classList.remove("click-animation");
+            }
             setShowMessageBox(false);
             sendMessage({
-              user: currentUser,
+              user: currentUserRef.current,
               text: originalMessage,
               timeStamp: new Date().toISOString()
             });

@@ -38,6 +38,7 @@ function ChatBox({ currentUser, isAdmin, messageRef, chatRef, confederateNameRef
 
     const handleReceiveMessage = (msg) => {
       setTypingUser("");
+      clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = null;
       setMessages((prevMessages) => [...prevMessages, msg]);
       let messageFromOtherUser = isAdmin ? msg.user !== confederateName : msg.user !== currentUser;

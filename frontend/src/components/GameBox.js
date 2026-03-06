@@ -97,7 +97,7 @@ function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef }) {
       offGameResolved(handleGameResolved);
       offProblemUpdate(handleProblemUpdate);
     };
-  }, [countdown]);
+  }, []);
 
   useEffect(() => {
     if (chimesConfig?.timer && userInteracted) {
@@ -118,14 +118,18 @@ function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef }) {
 
   const handleStopTimer = () => {
     stopTimer();
-    countdownAudioRef.current.pause();
-    countdownAudioRef.current.currentTime = 0;
+    if (countdownAudioRef.current) {
+      countdownAudioRef.current.pause();
+      countdownAudioRef.current.currentTime = 0;
+    }
   };
 
   const handleResetTimer = () => {
     resetTimer();
-    countdownAudioRef.current.pause();
-    countdownAudioRef.current.currentTime = 0;
+    if (countdownAudioRef.current) {
+      countdownAudioRef.current.pause();
+      countdownAudioRef.current.currentTime = 0;
+    }
   };
 
   return (
@@ -168,10 +172,10 @@ function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef }) {
           <p
             className={`mt-3 ${
               countdown === 0 ? "text-danger" : ""
-            } ${countdown <= 10 ? "flash-red" : ""}`}
+            } ${countdown !== null && countdown <= 10 ? "flash-red" : ""}`}
             ref={timerRef}
           >
-            {countdown > 0 ? (
+            {countdown === null ? null : countdown > 0 ? (
               countdown === 1
                 ? t("1_second_left")
                 : t("n_seconds_left", { count: countdown })
