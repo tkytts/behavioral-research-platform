@@ -195,6 +195,12 @@ function Experimenter() {
     setCollectionEnded(true);
   };
 
+  const confederates = gender === "F" ? confederatesFemaleStart : confederatesMaleStart;
+  const currentConfederateIndex = confederates.findIndex((c) => c.name === confederateName);
+  const isLastProblemOfLastBlock =
+    currentProblem === MAX_PROBLEMS_PER_BLOCK - 1 &&
+    currentConfederateIndex === confederates.length - 1;
+
   const resolveGame = (gameResolutionType) => {
     let isTimeoutResolution = gameResolutionType === RESOLUTION_TYPES.TNP;
 
@@ -222,9 +228,11 @@ function Experimenter() {
           <button className="btn btn-warning m-3" onClick={openResolutionModal}>
             {t("resolve_game")}
           </button>
-          <button className="btn btn-secondary" onClick={onNextProblemClick}>
-            {t("next_problem")}
-          </button>
+          {!isLastProblemOfLastBlock && (
+            <button className="btn btn-secondary" onClick={onNextProblemClick}>
+              {t("next_problem")}
+            </button>
+          )}
           <button className="btn btn-danger m-3" onClick={handleEndSession}>
             {t("end_collection")}
           </button>
