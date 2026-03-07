@@ -9,6 +9,18 @@ import './styles/minimal-theme.css';
 import { ChimesConfigProvider } from './context/ChimesConfigContext';
 import './i18n';
 
+if (process.env.NODE_ENV === 'development') {
+  window.addEventListener('error', (event) => {
+    if (
+      event.message?.includes('WebSocket') &&
+      event.filename?.includes('WebSocketClient')
+    ) {
+      event.stopImmediatePropagation();
+      event.preventDefault();
+    }
+  }, true); // capture phase — fires before webpack's listener
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
