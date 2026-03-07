@@ -47,6 +47,12 @@ function Experimenter() {
   const [showTutorialCompleteModal, setShowTutorialCompleteModal] = useState(false);
   const [numTries, setNumTries] = useState(1);
   const [collectionEnded, setCollectionEnded] = useState(false);
+  const [scripts, setScripts] = useState({});
+  const [areScriptsCollapsed, setAreScriptsCollapsed] = useState(true);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [typingWpm, setTypingWpm] = useState(null);
+  const scriptsContainerRef = useRef(null);
+  const chatBoxRef = useRef(null);
   const { t } = useTranslation();
 
   const MAX_PROBLEMS_PER_BLOCK = 5;
@@ -78,6 +84,41 @@ function Experimenter() {
   useEffect(() => {
     fetchCurrentUser();
   }, []);
+
+  useEffect(() => {
+    fetch("/config.json")
+      .then((r) => r.json())
+      .then((cfg) => setTypingWpm(cfg.typingWpm))
+      .catch((e) => console.error("Failed to load config.json:", e));
+  }, []);
+
+  const handleScriptMessageClick = (msg) => {
+    if (isSimulating || !chatBoxRef.current || typingWpm === null) return;
+    const delay = 60000 / (typingWpm * 5);
+    setIsSimulating(true);
+    chatBoxRef.current.startTypingSimulation(msg, delay);
+    setTimeout(() => setIsSimulating(false), msg.length * delay + 50);
+  };
+
+  useEffect(() => {
+    const loadScripts = async () => {
+      try {
+        const data = await getScripts();
+        setScripts(data);
+      } catch (error) {
+        console.error("Error loading scripts:", error);
+      }
+    };
+    loadScripts();
+  }, []);
+
+  const handleToggleAll = () => {
+    const nextCollapsed = !areScriptsCollapsed;
+    scriptsContainerRef.current?.querySelectorAll("details").forEach((el) => {
+      el.open = !nextCollapsed;
+    });
+    setAreScriptsCollapsed(nextCollapsed);
+  };
 
   const openGameConfigModal = () => {
     setShowGameConfigModal(true);
@@ -217,7 +258,7 @@ function Experimenter() {
       <h1 className="text-center mb-4">{t("title")}</h1>
 
       <div className="row">
-        <ChatBox currentUser={currentParticipant} isAdmin={true} disabled={false} />
+        <ChatBox ref={chatBoxRef} currentUser={currentParticipant} isAdmin={true} disabled={false} />
         <GameBox isAdmin={true} />
       </div>
       <div className="row">
@@ -238,6 +279,46 @@ function Experimenter() {
           </button>
         </div>
       </div>
+      {confederateName && (
+        <div className="row mt-3">
+          <div className="col-md-6">
+            <div className="card p-3">
+              <div>{t("dashboard_problem", { number: currentProblem + 1 })}</div>
+              {currentScript && (
+                <>
+                  <div style={{ color: RESOLUTION_COLORS[expectedResolution] }}>
+                    {t("dashboard_expected_resolution", { resolution: expectedResolution ? t(expectedResolution) : "" })}
+                  </div>
+                  <div className="scripts-modal-header mt-2">
+                    <span>{t("scripts_modal_title")}</span>
+                    <button className="btn btn-sm btn-outline-secondary" onClick={handleToggleAll}>
+                      {areScriptsCollapsed ? t("scripts_expand_all") : t("scripts_collapse_all")}
+                    </button>
+                  </div>
+                  <div className="scripts-modal" ref={scriptsContainerRef}>
+                    {Object.entries(currentScript.message_groups).map(([groupKey, groupData]) => (
+                      <details key={groupKey}>
+                        <summary>{t(`script_group_${groupKey}`)}</summary>
+                        <ul>
+                          {groupData.messages.map((msg, i) => (
+                            <li
+                              key={i}
+                              onClick={() => handleScriptMessageClick(msg)}
+                              style={{ cursor: isSimulating ? "not-allowed" : "pointer" }}
+                            >
+                              {msg}
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {collectionEnded && (
         <div className="alert alert-success alert-dismissible mt-3" role="alert">
           {t("collection_ended_feedback")}

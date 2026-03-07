@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useChimesConfig } from "../context/ChimesConfigContext";
+import { typeMessage } from "../utils/typeMessage";
 import {
   onReceiveMessage,
   offReceiveMessage,
@@ -18,7 +19,10 @@ import {
   telemetryEvent,
 } from "../realtime/game";
 
-function ChatBox({ currentUser, isAdmin, messageRef, chatRef, confederateNameRef, activityRef, sendButtonRef, disabled }) {
+const ChatBox = forwardRef(function ChatBox(
+  { currentUser, isAdmin, messageRef, chatRef, confederateNameRef, activityRef, sendButtonRef, disabled },
+  ref
+) {
   const { t } = useTranslation();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -174,6 +178,18 @@ function ChatBox({ currentUser, isAdmin, messageRef, chatRef, confederateNameRef
       });
   };
 
+  useImperativeHandle(ref, () => ({
+    startTypingSimulation: (text, delay) => {
+      typeMessage(text, {
+        delay,
+        onCharacter: (partial) => {
+          typing(isAdmin ? confederateName : currentUser);
+          setNewMessage(partial);
+        },
+      });
+    },
+  }), [confederateName, currentUser, isAdmin]);
+
   return (
     <div className="col-md-6">
       <div className="card">
@@ -238,6 +254,6 @@ function ChatBox({ currentUser, isAdmin, messageRef, chatRef, confederateNameRef
       </div>
     </div>
   );
-}
+});
 
 export default ChatBox;

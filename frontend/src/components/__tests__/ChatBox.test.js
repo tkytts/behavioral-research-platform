@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { I18nextProvider , initReactI18next } from 'react-i18next';
 import i18n from 'i18next';
@@ -186,7 +186,95 @@ describe('ChatBox', () => {
 
   it('displays current user name for non-admin', () => {
     renderChatBox({ currentUser: 'Player1' });
-    
+
     expect(screen.getByText('Player1')).toBeInTheDocument();
+  });
+});
+
+describe('ChatBox startTypingSimulation (forwardRef)', () => {
+  const renderWithRef = (ref, extraProps = {}) => {
+    const defaultProps = {
+      currentUser: 'TestUser',
+      isAdmin: false,
+      messageRef: { current: null },
+      chatRef: { current: null },
+      confederateNameRef: { current: null },
+      activityRef: { current: null },
+      sendButtonRef: { current: null },
+    };
+    return render(
+      <I18nextProvider i18n={testI18n}>
+        <ChimesConfigProvider>
+          <ChatBox ref={ref} {...defaultProps} {...extraProps} />
+        </ChimesConfigProvider>
+      </I18nextProvider>
+    );
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.clearAllTimers();
+    jest.useRealTimers();
+  });
+
+  it('exposes startTypingSimulation via forwardRef', () => {
+    const ref = React.createRef();
+    renderWithRef(ref);
+    expect(typeof ref.current.startTypingSimulation).toBe('function');
+  });
+
+  it('fills the input field character by character', () => {
+    const ref = React.createRef();
+    renderWithRef(ref);
+    const input = screen.getByPlaceholderText(/type a message/i);
+
+    act(() => {
+      ref.current.startTypingSimulation('hi', 50);
+      jest.advanceTimersByTime(50);
+    });
+    expect(input).toHaveValue('h');
+
+    act(() => {
+      jest.advanceTimersByTime(50);
+    });
+    expect(input).toHaveValue('hi');
+  });
+
+  it('calls typing() on each character for non-admin', () => {
+    const ref = React.createRef();
+    renderWithRef(ref, { currentUser: 'Participant' });
+
+    act(() => {
+      ref.current.startTypingSimulation('ab', 10);
+      jest.advanceTimersByTime(20);
+    });
+
+    expect(gameModule.typing).toHaveBeenCalledWith('Participant');
+    expect(gameModule.typing).toHaveBeenCalledTimes(2);
+  });
+
+  it('uses confederate name for typing indicator when isAdmin', () => {
+    let confederateHandler;
+    gameModule.onNewConfederate.mockImplementation((handler) => {
+      confederateHandler = handler;
+    });
+
+    const ref = React.createRef();
+    renderWithRef(ref, { isAdmin: true });
+
+    act(() => {
+      confederateHandler('Alice');
+    });
+
+    act(() => {
+      ref.current.startTypingSimulation('x', 10);
+      jest.advanceTimersByTime(10);
+    });
+
+    expect(gameModule.typing).toHaveBeenCalledWith('Alice');
   });
 });

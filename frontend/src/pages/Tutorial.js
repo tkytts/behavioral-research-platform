@@ -22,6 +22,7 @@ import {
   tutorialDone
 } from "../realtime/game";
 import { RESOLUTION_TYPES } from "../constants/resolutionTypes";
+import { typeMessage } from "../utils/typeMessage";
 import ChatBox from "../components/ChatBox";
 import GameBox from "../components/GameBox";
 import Modal from "../components/Modal";
@@ -321,36 +322,18 @@ function Tutorial() {
       height: inputPosition.height
     });
 
-    typeMessage(message);
-  };
-
-  function typeMessage(originalMessage, delay = 100) {
-    let newMsg = "";
-    const characters = originalMessage.split("");
-    let index = 0;
-
-    const intervalId = safeInterval(() => {
-      newMsg += characters[index];
-      setNewMessage(newMsg);
-
-      index++;
-
-      if (index >= characters.length) {
-        clearInterval(intervalId);
-
+    const intervalId = typeMessage(message, {
+      delay: 100,
+      onCharacter: (partial) => setNewMessage(partial),
+      onComplete: () => {
         safeTimeout(() => {
-          if (sendButtonRef.current) {
-            sendButtonRef.current.classList.add("click-animation");
-          }
-
+          sendButtonRef.current?.classList.add("click-animation");
           safeTimeout(() => {
-            if (sendButtonRef.current) {
-              sendButtonRef.current.classList.remove("click-animation");
-            }
+            sendButtonRef.current?.classList.remove("click-animation");
             setShowMessageBox(false);
             sendMessage({
               user: currentUserRef.current,
-              text: originalMessage,
+              text: message,
               timeStamp: new Date().toISOString()
             });
             try {
@@ -360,9 +343,10 @@ function Tutorial() {
             }
           }, 500);
         }, 1000);
-      }
-    }, delay);
-  }
+      },
+    });
+    activeTimersRef.current.push({ type: "interval", id: intervalId });
+  };
 
   return (
     <div className="container mt-4">
