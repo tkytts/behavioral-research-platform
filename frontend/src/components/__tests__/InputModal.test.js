@@ -68,14 +68,22 @@ describe('InputModal', () => {
     expect(onUnderstood).toHaveBeenCalledTimes(1);
   });
 
-  it('positions elements relative to input ref', () => {
-    renderInputModal({
+  it('renders 4 overlay strips that exclude the highlighted area', () => {
+    const { container } = renderInputModal({
       text: 'Test text',
       onUnderstood: jest.fn()
     });
-    
-    // The modal should be positioned based on inputRef.getBoundingClientRect()
-    // Just verify it renders without error
-    expect(screen.getByText('Test text')).toBeInTheDocument();
+
+    const children = container.firstChild.children;
+    const [topStrip, bottomStrip, leftStrip, rightStrip] = children;
+
+    // top: inputPosition.top = 100
+    expect(topStrip.style.height).toBe('100px');
+    // bottom: top = inputPosition.top + inputPosition.height = 150
+    expect(bottomStrip.style.top).toBe('150px');
+    // left: width = inputPosition.left = 100
+    expect(leftStrip.style.width).toBe('100px');
+    // right: left = inputPosition.left + inputPosition.width = 200
+    expect(rightStrip.style.left).toBe('200px');
   });
 });

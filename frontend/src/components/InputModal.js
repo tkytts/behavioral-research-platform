@@ -4,26 +4,31 @@ const InputModal = ({ onUnderstood, inputRef, text }) => {
     const inputPosition = inputRef.getBoundingClientRect();
     const { t } = useTranslation();
 
-    const overlayStyle = {
+    const overlayBase = {
         position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         zIndex: 1000,
         pointerEvents: 'none',
     };
 
+    const INSET = 6;
+    const highlightTop = inputPosition.top - INSET;
+    const highlightLeft = inputPosition.left - INSET;
+    const highlightWidth = inputPosition.width + INSET * 2;
+    const highlightHeight = inputPosition.height + INSET * 2;
+
+    const topOverlay = { ...overlayBase, top: 0, left: 0, width: '100%', height: highlightTop };
+    const bottomOverlay = { ...overlayBase, top: highlightTop + highlightHeight, left: 0, width: '100%', height: `calc(100% - ${highlightTop + highlightHeight}px)` };
+    const leftOverlay = { ...overlayBase, top: highlightTop, left: 0, width: highlightLeft, height: highlightHeight };
+    const rightOverlay = { ...overlayBase, top: highlightTop, left: highlightLeft + highlightWidth, width: `calc(100% - ${highlightLeft + highlightWidth}px)`, height: highlightHeight };
+
     const customStyle = {
         position: 'absolute',
-        top: inputPosition.top,
-        left: inputPosition.left,
-        width: inputPosition.width,
-        height: inputPosition.height,
-        padding: '10px',
+        top: highlightTop,
+        left: highlightLeft,
+        width: highlightWidth,
+        height: highlightHeight,
         border: '2px solid blue',
-        borderRadius: '5px',
         backgroundColor: 'transparent',
         zIndex: 1001,
         pointerEvents: 'auto',
@@ -62,7 +67,10 @@ const InputModal = ({ onUnderstood, inputRef, text }) => {
 
     return (
         <div>
-            <div style={overlayStyle}></div>
+            <div style={topOverlay}></div>
+            <div style={bottomOverlay}></div>
+            <div style={leftOverlay}></div>
+            <div style={rightOverlay}></div>
             <div style={customStyle}></div>
             <div style={textBoxStyle}>
                 <p>{text}</p>
