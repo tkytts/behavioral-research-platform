@@ -326,6 +326,106 @@ h2, .h2 { font-size: var(--font-size-lg); }
 }
 
 /* ============================================
+   SCRIPTS MODAL
+   ============================================ */
+
+.scripts-modal {
+  max-height: 60vh;
+  overflow-y: auto;
+  margin: var(--space-md) 0;
+  text-align: left;
+}
+
+.scripts-modal details {
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--space-sm);
+  overflow: hidden;
+}
+
+.scripts-modal details[open] > summary {
+  background-color: var(--color-border-subtle);
+}
+
+.scripts-modal summary {
+  padding: var(--space-sm) var(--space-md);
+  cursor: pointer;
+  font-weight: 500;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  user-select: none;
+}
+
+.scripts-modal summary::-webkit-details-marker {
+  display: none;
+}
+
+.scripts-modal summary::before {
+  content: "▶";
+  font-size: 0.65em;
+  transition: transform 150ms ease;
+  flex-shrink: 0;
+}
+
+.scripts-modal details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.scripts-modal summary:hover {
+  background-color: var(--color-border-subtle);
+}
+
+.scripts-modal ul {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md) var(--space-sm) calc(var(--space-md) + 1.2em);
+  list-style: disc;
+}
+
+.scripts-modal li {
+  padding: 2px 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.scripts-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+/* ============================================
+   DASHBOARD STATS — Experimenter info panel
+   ============================================ */
+
+.dashboard-stat {
+  display: flex;
+  flex-direction: column;
+  border-left: 3px solid var(--color-border);
+  padding-left: var(--space-sm);
+  padding-top: var(--space-xs);
+  padding-bottom: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+
+.dashboard-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+
+.dashboard-value {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: var(--line-height-tight);
+}
+
+/* ============================================
    CUSTOM COMPONENTS
    ============================================ */
 

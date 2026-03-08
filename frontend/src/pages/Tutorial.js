@@ -59,12 +59,6 @@ function Tutorial() {
     return id;
   };
 
-  const safeInterval = (fn, delay) => {
-    const id = setInterval(fn, delay);
-    activeTimersRef.current.push({ type: "interval", id });
-    return id;
-  };
-
   const clearAllTimers = () => {
     activeTimersRef.current.forEach(({ type, id }) => {
       if (type === "timeout") clearTimeout(id);

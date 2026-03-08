@@ -103,5 +103,21 @@
     "problem": "Problema",
     "end_collection": "Encerrar Sessão",
     "end_collection_confirm": "Encerrar sessão? O log do chat será salvo e a sessão será encerrada.",
-    "collection_ended_feedback": "Sessão encerrada. Dados salvos."
+    "collection_ended_feedback": "Sessão encerrada. Dados salvos.",
+    "dashboard_problem": "Problema: {{number}}",
+    "dashboard_expected_resolution": "Resolução: {{resolution}}",
+    "scripts_modal_title": "Roteiro do(a) Confederado(a)",
+    "scripts_collapse_all": "Recolher Tudo",
+    "scripts_expand_all": "Expandir Tudo",
+    "script_group_start_conversation": "Iniciar Conversas",
+    "script_group_express_opinions": "Expressar Opiniões",
+    "script_group_agree": "Concordar",
+    "script_group_disagree": "Discordar",
+    "script_group_ask_answer_questions": "Fazer e Responder Perguntas",
+    "script_group_when_points_obtained": "Responder ao Pontuar",
+    "script_group_when_points_not_obtained": "Responder ao não Pontuar",
+    "script_group_laugh": "Rir",
+    "dashboard_problem_label": "Problema",
+    "dashboard_expected_label": "Resolução",
+    "dashboard_suggestion_label": "Possível resposta do time"
 }

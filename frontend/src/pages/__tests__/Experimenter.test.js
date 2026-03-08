@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import Experimenter from '../Experimenter';
@@ -22,22 +22,58 @@ jest.mock('../../api/users', () => ({
   getCurrentUser: jest.fn(() => Promise.resolve('{"name":"Test Participant"}')),
 }));
 
-jest.mock('../../data/confederates', () => ({
-  getConfederatesStart: jest.fn(() =>
-    Promise.resolve({
-      femaleData: [
-        { name: 'Alice' },
-        { name: 'Beth' },
-        { name: 'Carol' }
-      ],
-      maleData: [
-        { name: 'David' },
-        { name: 'Eric' },
-        { name: 'Frank' }
-      ],
-    })
-  ),
+jest.mock('../../api/blocks', () => ({
+  getSuggestions: jest.fn(() => Promise.resolve([
+    ['sugA1', 'sugA2', 'sugA3', 'sugA4', 'sugA5'],
+    ['sugB1', 'sugB2', 'sugB3', 'sugB4', 'sugB5'],
+    ['sugC1', 'sugC2', 'sugC3', 'sugC4', 'sugC5'],
+  ])),
 }));
+
+jest.mock('../../data/confederates', () => {
+  const scriptsData = {
+    script_0: {
+      orders: [1, 10],
+      message_groups: {
+        start_conversation: { messages: ['hello'] },
+        express_opinions: { messages: ['opinion'] },
+        agree: { messages: ['yes'] },
+        disagree: { messages: ['no'] },
+        ask_answer_questions: { messages: ['question?'] },
+        when_points_obtained: { messages: ['great!'] },
+        when_points_not_obtained: { messages: ['oh no'] },
+        laugh: { messages: ['haha'] },
+      },
+      resolutions: [
+        { problem: 0, resolution: 'DNP' },
+        { problem: 1, resolution: 'AP' },
+        { problem: 2, resolution: 'TNP' },
+        { problem: 3, resolution: 'DP' },
+        { problem: 4, resolution: 'ANP' },
+      ],
+    },
+  };
+  return {
+    getConfederatesStart: jest.fn(() =>
+      Promise.resolve({
+        femaleData: [
+          { name: 'Alice', order: 1 },
+          { name: 'Beth',  order: 3 },
+          { name: 'Carol', order: 5 },
+        ],
+        maleData: [
+          { name: 'David', order: 2 },
+          { name: 'Eric',  order: 4 },
+          { name: 'Frank', order: 6 },
+        ],
+      })
+    ),
+    getScripts: jest.fn(() => Promise.resolve(scriptsData)),
+    getScriptForOrder: jest.fn((scripts, order) => {
+      return Object.values(scripts || {}).find(s => s.orders?.includes(order)) || null;
+    }),
+  };
+});
 
 // Mock realtime/game module
 jest.mock('../../realtime/game', () => ({
@@ -141,6 +177,12 @@ describe('Experimenter Component', () => {
         ],
       },
     });
+    const blocksMock = require('../../api/blocks');
+    blocksMock.getSuggestions.mockResolvedValue([
+      ['sugA1', 'sugA2', 'sugA3', 'sugA4', 'sugA5'],
+      ['sugB1', 'sugB2', 'sugB3', 'sugB4', 'sugB5'],
+      ['sugC1', 'sugC2', 'sugC3', 'sugC4', 'sugC5'],
+    ]);
   });
 
   describe('Initial Render', () => {
@@ -188,6 +230,26 @@ describe('Experimenter Component', () => {
 
       await waitFor(() => {
         expect(getCurrentUser).toHaveBeenCalled();
+      });
+    });
+
+    it('should load scripts on mount', async () => {
+      const { getScripts } = require('../../data/confederates');
+
+      renderWithProviders(<Experimenter />);
+
+      await waitFor(() => {
+        expect(getScripts).toHaveBeenCalled();
+      });
+    });
+
+    it('should load suggestions on mount', async () => {
+      const { getSuggestions } = require('../../api/blocks');
+
+      renderWithProviders(<Experimenter />);
+
+      await waitFor(() => {
+        expect(getSuggestions).toHaveBeenCalled();
       });
     });
   });
@@ -511,6 +573,117 @@ describe('Experimenter Component', () => {
     });
   });
 
+
+  describe('Dashboard', () => {
+    async function startGame() {
+      // Flush all pending async effects (confederates + scripts data loads)
+      // so handleGenderChange sees a populated confederate list when the modal opens.
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+
+      const startGameButton = screen.getAllByRole('button')[0];
+      await userEvent.click(startGameButton);
+      await screen.findByTestId('modal');
+      await userEvent.click(screen.getByText('start'));
+      await waitFor(() => expect(screen.queryByRole('combobox')).not.toBeInTheDocument());
+    }
+
+    it('should show problem label after game is started', async () => {
+      renderWithProviders(<Experimenter />);
+      await startGame();
+      await waitFor(() => {
+        expect(screen.getByText('Problem')).toBeInTheDocument();
+      });
+    });
+
+    it('should show problem number after game is started', async () => {
+      renderWithProviders(<Experimenter />);
+      await startGame();
+      await waitFor(() => {
+        expect(screen.getByText('1')).toBeInTheDocument();
+      });
+    });
+
+    it('should show expected resolution label and value after game is started', async () => {
+      renderWithProviders(<Experimenter />);
+      await startGame();
+      await waitFor(() => {
+        expect(screen.getByText('Resolution')).toBeInTheDocument();
+        expect(screen.getByText('DNP')).toBeInTheDocument();
+      });
+    });
+
+    it('should display scripts title inline after game is started', async () => {
+      renderWithProviders(<Experimenter />);
+      await startGame();
+      await waitFor(() => {
+        expect(screen.getByText('Confederate Scripts')).toBeInTheDocument();
+      });
+    });
+
+    it('should display message group headings inline after game is started', async () => {
+      renderWithProviders(<Experimenter />);
+      await startGame();
+      await waitFor(() => {
+        expect(screen.getByText('Initiating conversations')).toBeInTheDocument();
+      });
+    });
+
+    it('should display expand all button inline after game is started', async () => {
+      renderWithProviders(<Experimenter />);
+      await startGame();
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Expand All' })).toBeInTheDocument();
+      });
+    });
+
+    it('should toggle to collapse all button after clicking expand all', async () => {
+      renderWithProviders(<Experimenter />);
+      await startGame();
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Expand All' })).toBeInTheDocument());
+
+      await userEvent.click(screen.getByRole('button', { name: 'Expand All' }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Collapse All' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Expand All' })).not.toBeInTheDocument();
+      });
+    });
+
+    it('should toggle back to expand all button after clicking collapse all', async () => {
+      renderWithProviders(<Experimenter />);
+      await startGame();
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Expand All' })).toBeInTheDocument());
+
+      await userEvent.click(screen.getByRole('button', { name: 'Expand All' }));
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Collapse All' })).toBeInTheDocument());
+
+      await userEvent.click(screen.getByRole('button', { name: 'Collapse All' }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Expand All' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Collapse All' })).not.toBeInTheDocument();
+      });
+    });
+
+    it('should show suggestion label after game is started', async () => {
+      renderWithProviders(<Experimenter />);
+      await startGame();
+      await waitFor(() => {
+        expect(screen.getByText('Possible team answer')).toBeInTheDocument();
+      });
+    });
+
+    it('should show suggestion value for current block and problem', async () => {
+      renderWithProviders(<Experimenter />);
+      await startGame();
+      await waitFor(() => {
+        expect(screen.getByText('sugA1')).toBeInTheDocument();
+      });
+    });
+  });
+
   describe('Points and Time Configuration', () => {
     it('should have default points value of 7', async () => {
       renderWithProviders(<Experimenter />);
@@ -613,7 +786,7 @@ describe('Experimenter Component', () => {
       await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
 
       const items = screen.getAllByRole('listitem');
-      await userEvent.click(items[0]);
+      await userEvent.click(within(items[0]).getByRole('button'));
 
       // isSimulating flips to true synchronously; setIsSimulating(false) is in a
       // setTimeout that hasn't fired yet, so cursor should be not-allowed right now.
@@ -630,7 +803,7 @@ describe('Experimenter Component', () => {
       await startGame();
 
       const items = screen.getAllByRole('listitem');
-      await userEvent.click(items[0]);
+      await userEvent.click(within(items[0]).getByRole('button'));
 
       // Guard fires (typingWpm === null) → isSimulating stays false → pointer.
       screen.getAllByRole('listitem').forEach(li =>

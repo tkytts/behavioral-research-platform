@@ -5,7 +5,8 @@ import ChatBox from "../components/ChatBox";
 import GameBox from "../components/GameBox";
 import Modal from "../components/Modal";
 import { getCurrentUser } from "../api/users";
-import { getConfederatesStart } from "../data/confederates";
+import { getSuggestions } from "../api/blocks";
+import { getConfederatesStart, getScripts, getScriptForOrder } from "../data/confederates";
 import {
   onTutorialDone,
   offTutorialDone,
@@ -47,6 +48,7 @@ function Experimenter() {
   const [showTutorialCompleteModal, setShowTutorialCompleteModal] = useState(false);
   const [numTries, setNumTries] = useState(1);
   const [collectionEnded, setCollectionEnded] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
   const [scripts, setScripts] = useState({});
   const [areScriptsCollapsed, setAreScriptsCollapsed] = useState(true);
   const [isSimulating, setIsSimulating] = useState(false);
@@ -110,6 +112,18 @@ function Experimenter() {
       }
     };
     loadScripts();
+  }, []);
+
+  useEffect(() => {
+    const loadSuggestions = async () => {
+      try {
+        const data = await getSuggestions();
+        setSuggestions(data);
+      } catch (error) {
+        console.error("Error loading suggestions:", error);
+      }
+    };
+    loadSuggestions();
   }, []);
 
   const handleToggleAll = () => {
@@ -238,6 +252,10 @@ function Experimenter() {
 
   const confederates = gender === "F" ? confederatesFemaleStart : confederatesMaleStart;
   const currentConfederateIndex = confederates.findIndex((c) => c.name === confederateName);
+  const currentConfederate = confederates.find((c) => c.name === confederateName);
+  const currentScript = getScriptForOrder(scripts, currentConfederate?.order);
+  const expectedResolution = currentScript?.resolutions?.[currentProblem]?.resolution;
+  const currentSuggestion = suggestions[currentConfederateIndex]?.[currentProblem];
   const isLastProblemOfLastBlock =
     currentProblem === MAX_PROBLEMS_PER_BLOCK - 1 &&
     currentConfederateIndex === confederates.length - 1;
@@ -257,68 +275,89 @@ function Experimenter() {
     <div className="container mt-4" style={{ overflow: "hidden" }}>
       <h1 className="text-center mb-4">{t("title")}</h1>
 
-      <div className="row">
-        <ChatBox ref={chatBoxRef} currentUser={currentParticipant} isAdmin={true} disabled={false} />
-        <GameBox isAdmin={true} />
-      </div>
-      <div className="row">
-        <div className="col-md-6 mt-3">
-          <button className="btn btn-primary" onClick={openGameConfigModal}>
-            {t("start_game")}
-          </button>
-          <button className="btn btn-warning m-3" onClick={openResolutionModal}>
-            {t("resolve_game")}
-          </button>
-          {!isLastProblemOfLastBlock && (
-            <button className="btn btn-secondary" onClick={onNextProblemClick}>
-              {t("next_problem")}
+      <div className="row align-items-start">
+        <div className="col-md-6">
+          <div className="row">
+            <ChatBox ref={chatBoxRef} currentUser={currentParticipant} isAdmin={true} disabled={false} className="col-12" />
+          </div>
+          <div className="mt-3 d-flex justify-content-center gap-2">
+            <button className="btn btn-primary" onClick={openGameConfigModal}>
+              {t("start_game")}
             </button>
+            <button className="btn btn-warning" onClick={openResolutionModal}>
+              {t("resolve_game")}
+            </button>
+            {!isLastProblemOfLastBlock && (
+              <button className="btn btn-secondary" onClick={onNextProblemClick}>
+                {t("next_problem")}
+              </button>
+            )}
+            <button className="btn btn-danger" onClick={handleEndSession}>
+              {t("end_collection")}
+            </button>
+          </div>
+          {confederateName && (
+            <div className="mt-3">
+              <div className="card p-3">
+                <div className="dashboard-stat">
+                  <span className="dashboard-label">{t("dashboard_problem_label")}</span>
+                  <span className="dashboard-value">{currentProblem + 1}</span>
+                </div>
+                {expectedResolution && (
+                  <div className="dashboard-stat">
+                    <span className="dashboard-label">{t("dashboard_expected_label")}</span>
+                    <span className="dashboard-value" style={{ color: RESOLUTION_COLORS[expectedResolution] }}>
+                      {t(expectedResolution)}
+                    </span>
+                  </div>
+                )}
+                {currentSuggestion && (
+                  <div className="dashboard-stat">
+                    <span className="dashboard-label">{t("dashboard_suggestion_label")}</span>
+                    <span className="dashboard-value">{currentSuggestion}</span>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
-          <button className="btn btn-danger m-3" onClick={handleEndSession}>
-            {t("end_collection")}
-          </button>
         </div>
-      </div>
-      {confederateName && (
-        <div className="row mt-3">
-          <div className="col-md-6">
-            <div className="card p-3">
-              <div>{t("dashboard_problem", { number: currentProblem + 1 })}</div>
-              {currentScript && (
-                <>
-                  <div style={{ color: RESOLUTION_COLORS[expectedResolution] }}>
-                    {t("dashboard_expected_resolution", { resolution: expectedResolution ? t(expectedResolution) : "" })}
-                  </div>
-                  <div className="scripts-modal-header mt-2">
-                    <span>{t("scripts_modal_title")}</span>
-                    <button className="btn btn-sm btn-outline-secondary" onClick={handleToggleAll}>
-                      {areScriptsCollapsed ? t("scripts_expand_all") : t("scripts_collapse_all")}
-                    </button>
-                  </div>
-                  <div className="scripts-modal" ref={scriptsContainerRef}>
-                    {Object.entries(currentScript.message_groups).map(([groupKey, groupData]) => (
-                      <details key={groupKey}>
-                        <summary>{t(`script_group_${groupKey}`)}</summary>
-                        <ul>
-                          {groupData.messages.map((msg, i) => (
-                            <li
-                              key={i}
+        <div className="col-md-6">
+          <div className="row">
+            <GameBox isAdmin={true} className="col-12" />
+          </div>
+          {confederateName && currentScript && (
+            <div className="mt-1">
+              <div className="card p-3">
+                <div className="scripts-modal-header">
+                  <span>{t("scripts_modal_title")}</span>
+                  <button className="btn btn-sm btn-outline-secondary" onClick={handleToggleAll}>
+                    {areScriptsCollapsed ? t("scripts_expand_all") : t("scripts_collapse_all")}
+                  </button>
+                </div>
+                <div className="scripts-modal" ref={scriptsContainerRef}>
+                  {Object.entries(currentScript.message_groups).map(([groupKey, groupData]) => (
+                    <details key={groupKey}>
+                      <summary>{t(`script_group_${groupKey}`)}</summary>
+                      <ul>
+                        {groupData.messages.map((msg, i) => (
+                          <li key={i} style={{ cursor: isSimulating ? "not-allowed" : "pointer" }}>
+                            <button
                               onClick={() => handleScriptMessageClick(msg)}
-                              style={{ cursor: isSimulating ? "not-allowed" : "pointer" }}
+                              style={{ cursor: "inherit", background: "none", border: "none", padding: 0, font: "inherit", textAlign: "left", width: "100%" }}
                             >
                               {msg}
-                            </li>
-                          ))}
-                        </ul>
-                      </details>
-                    ))}
-                  </div>
-                </>
-              )}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
       {collectionEnded && (
         <div className="alert alert-success alert-dismissible mt-3" role="alert">
           {t("collection_ended_feedback")}

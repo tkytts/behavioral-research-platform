@@ -32,6 +32,21 @@ public class BlocksController : ControllerBase
     }
 
     /// <summary>
+    /// Gets answer suggestions for all blocks.
+    /// </summary>
+    [HttpGet("/api/suggestions")]
+    public async Task<ActionResult<IReadOnlyList<IReadOnlyList<string>>>> GetSuggestions()
+    {
+        var path = "Resources/suggestions.json";
+        if (!System.IO.File.Exists(path))
+            return Ok(Array.Empty<string[]>());
+
+        var json = await System.IO.File.ReadAllTextAsync(path);
+        var data = JsonSerializer.Deserialize<List<List<string>>>(json) ?? new();
+        return Ok(data);
+    }
+
+    /// <summary>
     /// Gets the current user/participant name.
     /// </summary>
     [HttpGet("/api/currentUser")]

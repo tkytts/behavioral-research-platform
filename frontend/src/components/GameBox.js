@@ -16,7 +16,7 @@ import {
   resetTimer,
 } from "../realtime/game";
 
-function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef }) {
+function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef, className }) {
   const { t } = useTranslation();
   const [currentProblem, setCurrentProblem] = useState(null);
   const [currentBlock, setCurrentBlock] = useState(null);
@@ -133,7 +133,7 @@ function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef }) {
   };
 
   return (
-    <div className="col-md-6">
+    <div className={className ?? "col-md-6"}>
       <div className="card">
         <div className="card-body">
           <p className="mb-3">{t("find_the_solution_to_the_problem")}:</p>
@@ -191,7 +191,7 @@ function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef }) {
           </p>
 
           {isAdmin && (
-            <div>
+            <div className="d-flex gap-2 mt-3">
               <button className="btn btn-primary" onClick={handleStartTimer}>
                 {t("start_timer")}
               </button>

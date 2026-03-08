@@ -1,0 +1,12 @@
+[
+  ["6,5 (metade)", "seta para a esquerda", "D", "estrela laranja, amarela ou verde", "E"],
+  ["Q* ou O (comO)", "losângo roxo", "6 (soma), 7 (diferenças crescentes), 8 (x2)", "O", "hexágono"],
+  ["W", "quadrado", "N* (+3,+4,+5), M (+4) ou L (+3)", "18 ou 24*", "seta ou hexágono azul, verde ou vermelho"],
+  ["O (rolO) ou I* (-3)", "triângulo vermelho, amarelo ou verde", "29* (Fibonacci), 27 (+9)", "H", "círculo"],
+  ["J", "seta vermelha para baixo, triângulo vermelho para a direita", "seta para a esquerda", "U ou S*", "2* (subtraindo), 10, 0 ou 22"],
+  ["triângulo", "B", "13* (soma 3)", "triângulo roxo ou triângulo roxo pequeno", "F (sequência), G* ou H (cálculo incorreto)"],
+  ["estrela branca vermelha ou rosa, círculo vermelho ou rosa", "5 (soma) ou 1 (PI)", "E (cEgo), K (+4), S (+8)", "X", "seta para a esquerda"],
+  ["quadrado", "7* (primos), 8 (soma)", "O (-1 letra do alfabeto)", "quadrado amarelo ou hexágono amarelo", "E (crescente), Z (cíclico), D (repetição), A* (inversa)"],
+  ["seta vermelha para a esquerda, círculo vermelho ou verde", "-8* (-9) ou 0", "I (bIju), F (+8), V (após o U)", "L", "seta para baixo"],
+  ["A (zonA)", "H", "pentágono", "hexágono laranja pequeno, pentágono laranja pequeno", "1, 2 ou 3* (Fibonacci)"]
+]

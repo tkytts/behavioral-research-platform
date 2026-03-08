@@ -33,4 +33,14 @@ public class BlocksControllerTests : IClassFixture<WebApplicationFactory<Program
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
+
+    [Fact]
+    public async Task GetSuggestions_ReturnsOkStatus()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/suggestions");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
 }

@@ -103,5 +103,21 @@
     "problem": "Problem",
     "end_collection": "End Session",
     "end_collection_confirm": "End session? The chat log will be saved and the session will be closed.",
-    "collection_ended_feedback": "Session ended. Data saved."
+    "collection_ended_feedback": "Session ended. Data saved.",
+    "dashboard_problem": "Problem: {{number}}",
+    "dashboard_expected_resolution": "Resolution: {{resolution}}",
+    "scripts_modal_title": "Confederate Script",
+    "scripts_collapse_all": "Collapse All",
+    "scripts_expand_all": "Expand All",
+    "script_group_start_conversation": "Initiating conversations",
+    "script_group_express_opinions": "Expressing opinion",
+    "script_group_agree": "Agreeing",
+    "script_group_disagree": "Disagreeing",
+    "script_group_ask_answer_questions": "Asking/answering questions",
+    "script_group_when_points_obtained": "When points are scored",
+    "script_group_when_points_not_obtained": "When points are not scored",
+    "script_group_laugh": "Laughing",
+    "dashboard_problem_label": "Problem",
+    "dashboard_expected_label": "Resolution",
+    "dashboard_suggestion_label": "Possible team answer"
 }

@@ -20,7 +20,7 @@ import {
 } from "../realtime/game";
 
 const ChatBox = forwardRef(function ChatBox(
-  { currentUser, isAdmin, messageRef, chatRef, confederateNameRef, activityRef, sendButtonRef, disabled },
+  { currentUser, isAdmin, messageRef, chatRef, confederateNameRef, activityRef, sendButtonRef, disabled, className },
   ref
 ) {
   const { t } = useTranslation();
@@ -31,7 +31,7 @@ const ChatBox = forwardRef(function ChatBox(
   const { chimesConfig } = useChimesConfig();
   const mousePositionRef = useRef({ x: 0, y: 0 });
   const typingTimeoutRef = useRef(null);
-  const messagesEndRef = useRef(null);
+  const chatBodyRef = useRef(null);
 
   useEffect(() => {
     const updateMousePosition = (e) => {
@@ -85,8 +85,8 @@ const ChatBox = forwardRef(function ChatBox(
   }, [currentUser, chimesConfig, confederateName, isAdmin]);
 
   const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (chatBodyRef.current) {
+      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
     }
   };
 
@@ -191,7 +191,7 @@ const ChatBox = forwardRef(function ChatBox(
   }), [confederateName, currentUser, isAdmin]);
 
   return (
-    <div className="col-md-6">
+    <div className={className ?? "col-md-6"}>
       <div className="card">
         <div className="card-header">
           <h3 className="h5 mb-0">{t('messages')}</h3>
@@ -203,7 +203,10 @@ const ChatBox = forwardRef(function ChatBox(
             overflowX: 'hidden',
             paddingRight: '10px',
           }}
-          ref={chatRef}>
+          ref={(el) => {
+            chatBodyRef.current = el;
+            if (chatRef) chatRef.current = el;
+          }}>
           {confederateName && <p className="info-box" ref={confederateNameRef}>{isAdmin ? currentUser : confederateName}</p>}
           <div className="mb-3">
             {messages.map((msg, index) => (
@@ -220,7 +223,6 @@ const ChatBox = forwardRef(function ChatBox(
             <br></br>
             <p className="info-box">{isAdmin ? confederateName : currentUser}</p>
           </div>
-          <div ref={messagesEndRef} />
         </div>
         <div className="card-footer">
           <div className="input-group">
