@@ -69,13 +69,15 @@ describe('InputModal', () => {
   });
 
   it('renders 4 overlay strips that exclude the highlighted area', () => {
-    const { container } = renderInputModal({
+    renderInputModal({
       text: 'Test text',
       onUnderstood: jest.fn()
     });
 
-    const children = container.firstChild.children;
-    const [topStrip, bottomStrip, leftStrip, rightStrip] = children;
+    const topStrip = screen.getByTestId('top-overlay');
+    const bottomStrip = screen.getByTestId('bottom-overlay');
+    const leftStrip = screen.getByTestId('left-overlay');
+    const rightStrip = screen.getByTestId('right-overlay');
 
     // top: highlightTop = inputPosition.top - INSET = 100 - 6 = 94
     expect(topStrip.style.height).toBe('94px');
