@@ -77,13 +77,13 @@ describe('InputModal', () => {
     const children = container.firstChild.children;
     const [topStrip, bottomStrip, leftStrip, rightStrip] = children;
 
-    // top: inputPosition.top = 100
-    expect(topStrip.style.height).toBe('100px');
-    // bottom: top = inputPosition.top + inputPosition.height = 150
-    expect(bottomStrip.style.top).toBe('150px');
-    // left: width = inputPosition.left = 100
-    expect(leftStrip.style.width).toBe('100px');
-    // right: left = inputPosition.left + inputPosition.width = 200
-    expect(rightStrip.style.left).toBe('200px');
+    // top: highlightTop = inputPosition.top - INSET = 100 - 6 = 94
+    expect(topStrip.style.height).toBe('94px');
+    // bottom: top = highlightTop + highlightHeight = 94 + (50 + 12) = 156
+    expect(bottomStrip.style.top).toBe('156px');
+    // left: width = highlightLeft = inputPosition.left - INSET = 100 - 6 = 94
+    expect(leftStrip.style.width).toBe('94px');
+    // right: left = highlightLeft + highlightWidth = 94 + (100 + 12) = 206
+    expect(rightStrip.style.left).toBe('206px');
   });
 });
