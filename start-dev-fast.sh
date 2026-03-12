@@ -1,17 +1,23 @@
 #!/usr/bin/env bash
-DIR="$(cd "$(dirname "$0")" && pwd)"
+set -euo pipefail
 
-echo "Starting Experiment Platform (Fast Mode)..."
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Kill existing session if present
+echo "Starting Experiment Platform Development Environment (Fast Mode)..."
+
+# Kill any existing dev session
 tmux kill-session -t dev 2>/dev/null || true
 
-tmux new-session -d -s dev -n backend \
-  "cd \"$DIR/backend\" && dotnet run --project src/GameServer.Api; read"
+# Create new session with backend in first pane
+tmux new-session -d -s dev -x "$(tput cols)" -y "$(tput lines)" \
+  -e "PANE_TITLE=Backend" \
+  "cd '$REPO_ROOT/backend' && printf '\033]2;Backend - GameServer.Api\033\\' && dotnet run --project src/GameServer.Api"
 
-sleep 3
-
+# Split vertically for frontend (skip npm install)
 tmux split-window -h -t dev \
-  "cd \"$DIR/frontend\" && npm start; read"
+  "sleep 3 && cd '$REPO_ROOT/frontend' && printf '\033]2;Frontend - React App\033\\' && npm start"
 
-tmux attach -t dev
+echo "- Backend: https://localhost:5001"
+echo "- Frontend: http://localhost:3000"
+
+tmux attach-session -t dev
