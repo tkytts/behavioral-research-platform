@@ -18,6 +18,7 @@ public class GameHub : Hub
     private readonly ITimerService _timerService;
     private readonly ITelemetryRepository _telemetryRepository;
     private readonly IChatLogRepository _chatLogRepository;
+    private readonly INotesRepository _notesRepository;
     private readonly ILogger<GameHub> _logger;
 
     public GameHub(
@@ -26,6 +27,7 @@ public class GameHub : Hub
         ITimerService timerService,
         ITelemetryRepository telemetryRepository,
         IChatLogRepository chatLogRepository,
+        INotesRepository notesRepository,
         ILogger<GameHub> logger)
     {
         _gameService = gameService;
@@ -33,6 +35,7 @@ public class GameHub : Hub
         _timerService = timerService;
         _telemetryRepository = telemetryRepository;
         _chatLogRepository = chatLogRepository;
+        _notesRepository = notesRepository;
         _logger = logger;
     }
 
@@ -370,6 +373,18 @@ public class GameHub : Hub
                 "Chimes config propagated - MessageSent: {Sent}, MessageReceived: {Received}, Timer: {Timer}",
                 config.MessageSent, config.MessageReceived, config.Timer);
         }
+    }
+
+    #endregion
+
+    #region Notes
+
+    /// <summary>
+    /// Saves researcher notes to a text file.
+    /// </summary>
+    public async Task SaveNotes(string content)
+    {
+        await _notesRepository.SaveAsync(content);
     }
 
     #endregion

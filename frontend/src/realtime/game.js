@@ -118,6 +118,9 @@ export const getConfederate = () => invokeWhenReady("GetConfederate");
 // Resolution
 export const setGameResolution = (payload) => invokeWhenReady("SetGameResolution", payload);
 
+// Notes
+export const saveNotes = (content) => invokeWhenReady("SaveNotes", content);
+
 // Telemetry
 export const telemetryEvent = (payload) =>
   invokeWhenReady("TelemetryEvent", payload).catch((e) =>

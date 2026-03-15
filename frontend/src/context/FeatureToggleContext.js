@@ -4,6 +4,7 @@ import { getFeatures } from "../api/config";
 const DEFAULTS = {
   dashboard: { active: true },
   scriptsModal: { active: true, typingWpm: 60 },
+  notes: { active: true },
 };
 
 const FeatureToggleContext = createContext(DEFAULTS);

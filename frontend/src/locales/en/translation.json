@@ -119,5 +119,9 @@
     "script_group_laugh": "Laughing",
     "dashboard_problem_label": "Problem",
     "dashboard_expected_label": "Resolution",
-    "dashboard_suggestion_label": "Possible team answer"
+    "dashboard_suggestion_label": "Possible team answer",
+    "notes_label": "Researcher Notes",
+    "notes_placeholder": "Type your notes here...",
+    "notes_marker_block": "Block",
+    "notes_marker_problem": "Problem"
 }

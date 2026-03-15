@@ -104,6 +104,7 @@ jest.mock('../../realtime/game', () => ({
   stopGame: jest.fn(),
   telemetryEvent: jest.fn(),
   setGameResolution: jest.fn(),
+  saveNotes: jest.fn(),
 }));
 
 // Mock child components
@@ -130,6 +131,12 @@ jest.mock('../../components/GameBox', () => {
 jest.mock('../../components/Modal', () => {
   return function Modal({ children }) {
     return <div data-testid="modal">{children}</div>;
+  };
+});
+
+jest.mock('../../components/ExperimenterNotes', () => {
+  return function ExperimenterNotes() {
+    return <div data-testid="experimenter-notes" />;
   };
 });
 

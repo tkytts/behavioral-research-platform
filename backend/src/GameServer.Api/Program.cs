@@ -54,6 +54,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseCors();
+app.UseWebSockets();
 
 app.MapControllers();
 app.MapHub<GameHub>("/api/gamehub");

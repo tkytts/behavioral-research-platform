@@ -119,5 +119,9 @@
     "script_group_laugh": "Rir",
     "dashboard_problem_label": "Problema",
     "dashboard_expected_label": "Resolução",
-    "dashboard_suggestion_label": "Possível resposta do time"
+    "dashboard_suggestion_label": "Possível resposta do time",
+    "notes_label": "Notas do(a) Pesquisador(a)",
+    "notes_placeholder": "Digite suas anotações aqui...",
+    "notes_marker_block": "Bloco",
+    "notes_marker_problem": "Problema"
 }

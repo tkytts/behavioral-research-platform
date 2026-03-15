@@ -14,6 +14,7 @@ public static class DependencyInjection
         services.AddSingleton<IBlockRepository, JsonBlockRepository>();
         services.AddSingleton<ITelemetryRepository, CsvTelemetryRepository>();
         services.AddSingleton<IChatLogRepository, FileChatLogRepository>();
+        services.AddSingleton<INotesRepository, FileNotesRepository>();
 
         return services;
     }

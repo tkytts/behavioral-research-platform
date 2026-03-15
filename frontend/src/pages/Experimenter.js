@@ -5,6 +5,7 @@ import { useFeatureActive, useFeatureConfig } from "../context/FeatureToggleCont
 import ChatBox from "../components/ChatBox";
 import GameBox from "../components/GameBox";
 import Modal from "../components/Modal";
+import ExperimenterNotes from "../components/ExperimenterNotes";
 import { getCurrentUser } from "../api/users";
 import { getSuggestions } from "../api/blocks";
 import { getConfederatesStart, getScripts, getScriptForOrder } from "../data/confederates";
@@ -27,7 +28,8 @@ import {
   gameEnded,
   stopGame,
   telemetryEvent,
-  setGameResolution
+  setGameResolution,
+  saveNotes
 } from "../realtime/game";
 import { RESOLUTION_TYPES } from "../constants/resolutionTypes";
 
@@ -56,6 +58,8 @@ function Experimenter() {
   const scriptsContainerRef = useRef(null);
   const showDashboard = useFeatureActive("dashboard");
   const showScripts = useFeatureActive("scriptsModal");
+  const showNotes = useFeatureActive("notes");
+  const [notesClearKey, setNotesClearKey] = useState(0);
   const { typingWpm: configTypingWpm } = useFeatureConfig("scriptsModal");
   const chatBoxRef = useRef(null);
   const { t } = useTranslation();
@@ -239,6 +243,12 @@ function Experimenter() {
 
   const handleEndSession = () => {
     if (!window.confirm(t("end_collection_confirm"))) return;
+    const notesContent = localStorage.getItem("experimenter_notes") ?? "";
+    if (notesContent.trim()) {
+      saveNotes(notesContent);
+    }
+    localStorage.removeItem("experimenter_notes");
+    setNotesClearKey((k) => k + 1);
     stopGame();
     clearChat();
     telemetryEvent({ action: "CollectionEnded", user: currentParticipant });
@@ -354,6 +364,14 @@ function Experimenter() {
           )}
         </div>
       </div>
+      {showNotes && (
+        <ExperimenterNotes
+          key={notesClearKey}
+          currentBlockIndex={currentConfederateIndex}
+          currentProblem={currentProblem}
+          confederateName={confederateName}
+        />
+      )}
       {collectionEnded && (
         <div className="alert alert-success alert-dismissible mt-3" role="alert">
           {t("collection_ended_feedback")}
