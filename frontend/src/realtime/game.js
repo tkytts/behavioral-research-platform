@@ -113,6 +113,7 @@ export const tutorialDone = (numTries) => invokeWhenReady("TutorialDone", numTri
 // Participant helpers
 export const setParticipantName = (name) => invokeWhenReady("SetParticipantName", name);
 export const getChimes = () => invokeWhenReady("GetChimes");
+export const getConfederate = () => invokeWhenReady("GetConfederate");
 
 // Resolution
 export const setGameResolution = (payload) => invokeWhenReady("SetGameResolution", payload);

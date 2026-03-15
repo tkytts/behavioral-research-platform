@@ -10,4 +10,5 @@ public static class TelemetryAction
     public const string NextProblem        = "next problem";
     public const string NewGame            = "NEW GAME";
     public const string GameResolved       = "game resolved";
+    public const string TeamAnswerSet      = "TEAM_ANSWER_SET";
 }

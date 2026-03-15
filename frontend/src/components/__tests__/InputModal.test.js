@@ -79,13 +79,13 @@ describe('InputModal', () => {
     const leftStrip = screen.getByTestId('left-overlay');
     const rightStrip = screen.getByTestId('right-overlay');
 
-    // top: highlightTop = inputPosition.top - INSET = 100 - 6 = 94
+    // INSET = 6; highlightTop = inputPosition.top - INSET = 100 - 6 = 94
     expect(topStrip.style.height).toBe('94px');
-    // bottom: top = highlightTop + highlightHeight = 94 + (50 + 12) = 156
+    // highlightHeight = inputPosition.height + INSET * 2 = 50 + 12 = 62; bottom top = 94 + 62 = 156
     expect(bottomStrip.style.top).toBe('156px');
-    // left: width = highlightLeft = inputPosition.left - INSET = 100 - 6 = 94
+    // highlightLeft = inputPosition.left - INSET = 100 - 6 = 94
     expect(leftStrip.style.width).toBe('94px');
-    // right: left = highlightLeft + highlightWidth = 94 + (100 + 12) = 206
+    // highlightWidth = inputPosition.width + INSET * 2 = 100 + 12 = 112; right left = 94 + 112 = 206
     expect(rightStrip.style.left).toBe('206px');
   });
 });

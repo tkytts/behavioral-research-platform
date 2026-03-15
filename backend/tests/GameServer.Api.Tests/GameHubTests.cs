@@ -166,6 +166,40 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
     }
 
     [Fact]
+    public async Task SetAnswer_BroadcastsAnswerToClients()
+    {
+        // Arrange
+        string? receivedAnswer = null;
+        _connection!.On<string>("SetAnswer", answer => receivedAnswer = answer);
+
+        // Act
+        await _connection.InvokeAsync("SetAnswer", "42");
+        await Task.Delay(100);
+
+        // Assert
+        receivedAnswer.Should().Be("42");
+    }
+
+    [Fact]
+    public async Task SetAnswer_SavesTeamAnswerSetTelemetry()
+    {
+        // Arrange
+        await _connection!.InvokeAsync("SetParticipantName", "IntegrationUser");
+
+        // Act
+        await _connection.InvokeAsync("SetAnswer", "42");
+        await Task.Delay(100);
+
+        // Assert
+        var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
+        var files = Directory.GetFiles(settings.LogPath, "*.csv");
+        var allContent = await Task.WhenAll(files.Select(f => File.ReadAllTextAsync(f)));
+        var combined = string.Concat(allContent);
+        combined.Should().Contain(TelemetryAction.TeamAnswerSet);
+        combined.Should().Contain(",,42");
+    }
+
+    [Fact]
     public async Task Typing_NotifiesOtherClients()
     {
         // Arrange - Create second connection

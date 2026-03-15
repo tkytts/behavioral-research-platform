@@ -4,6 +4,7 @@ describe('connection module', () => {
   let mockStart;
   let mockInvoke;
   let mockOnreconnected;
+  let mockOnreconnecting;
   let mockWithUrl;
   let mockWithAutomaticReconnect;
 
@@ -16,6 +17,7 @@ describe('connection module', () => {
     mockStart = jest.fn();
     mockInvoke = jest.fn();
     mockOnreconnected = jest.fn();
+    mockOnreconnecting = jest.fn();
     mockWithUrl = jest.fn().mockReturnThis();
     mockWithAutomaticReconnect = jest.fn().mockReturnThis();
 
@@ -24,7 +26,8 @@ describe('connection module', () => {
       off: mockOff,
       start: mockStart,
       invoke: mockInvoke,
-      onreconnected: mockOnreconnected
+      onreconnected: mockOnreconnected,
+      onreconnecting: mockOnreconnecting
     };
 
     // Mock SignalR with doMock (works with resetModules)
@@ -96,24 +99,37 @@ describe('connection module', () => {
     await expect(connectionReady).resolves.toBeUndefined();
   });
 
-  describe('invoke override', () => {
-    it('waits for connection before invoking', async () => {
-      let resolveStart;
-      mockStart.mockReturnValueOnce(new Promise(resolve => {
-        resolveStart = resolve;
-      }));
-      mockInvoke.mockResolvedValueOnce('result');
+  it('registers onreconnecting handler', () => {
+    mockStart.mockResolvedValueOnce(undefined);
+    require('../connection');
+    expect(mockOnreconnecting).toHaveBeenCalledWith(expect.any(Function));
+  });
 
-      const connection = require('../connection').default;
+  it('registers onreconnected handler', () => {
+    mockStart.mockResolvedValueOnce(undefined);
+    require('../connection');
+    expect(mockOnreconnected).toHaveBeenCalledWith(expect.any(Function));
+  });
 
-      // Start invoke (should wait for connection)
-      const invokePromise = connection.invoke('TestMethod', 'arg1');
+  it('connectionReady is pending while reconnecting, then resolves on reconnected', async () => {
+    mockStart.mockResolvedValueOnce(undefined);
+    const mod = require('../connection');
 
-      // Resolve connection
-      resolveStart();
+    // Simulate reconnecting: fire the onreconnecting callback
+    const reconnectingHandler = mockOnreconnecting.mock.calls[0][0];
+    reconnectingHandler();
 
-      const result = await invokePromise;
-      expect(result).toBe('result');
-    });
+    // connectionReady should now be a new pending promise
+    let resolved = false;
+    mod.connectionReady.then(() => { resolved = true; });
+    await Promise.resolve(); // flush microtasks
+    expect(resolved).toBe(false);
+
+    // Simulate reconnected: fire the onreconnected callback
+    const reconnectedHandler = mockOnreconnected.mock.calls[0][0];
+    reconnectedHandler();
+
+    await mod.connectionReady;
+    expect(resolved).toBe(true);
   });
 });

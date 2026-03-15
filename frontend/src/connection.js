@@ -1,5 +1,4 @@
 import * as signalR from "@microsoft/signalr";
-
 import config from "./config";
 
 const connection = new signalR.HubConnectionBuilder()
@@ -7,31 +6,22 @@ const connection = new signalR.HubConnectionBuilder()
   .withAutomaticReconnect()
   .build();
 
-// start once and keep the promise so callers can await it
-const startPromise = connection.start();
+let resolveReady;
+export let connectionReady = new Promise(resolve => { resolveReady = resolve; });
 
-// preserve original invoke
-const originalInvoke = connection.invoke.bind(connection);
+connection.onreconnecting(() => {
+  // Replace with a new pending promise so invokeWhenReady waits during reconnection
+  connectionReady = new Promise(resolve => { resolveReady = resolve; });
+});
 
-// override invoke to await startPromise (or try to start if it failed)
-connection.invoke = async (...args) => {
-  try {
-    await startPromise;
-  } catch (startErr) {
-    // if initial start failed, try to start again before invoking
-    await connection.start();
-  }
-  return originalInvoke(...args);
-};
+connection.onreconnected(() => resolveReady());
 
-// add emit alias used in some components
+connection.start()
+  .then(() => resolveReady())
+  .catch(() => resolveReady()); // resolve on failure too; invoke will throw naturally
+
 if (!connection.emit) {
   connection.emit = connection.invoke.bind(connection);
 }
-
-// Export a promise that resolves when the connection is ready.
-// Swallow the rejection here so callers fall through to connection.invoke,
-// which already has retry logic for failed starts.
-export const connectionReady = startPromise.catch(() => {});
 
 export default connection;

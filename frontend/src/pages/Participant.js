@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import ChatBox from "../components/ChatBox";
 import GameBox from "../components/GameBox";
 import Modal from "../components/Modal";
+import { fetchConfederate } from "../api/game";
 import {
   onNewConfederate,
   offNewConfederate,
@@ -44,6 +45,21 @@ function Participant() {
       offShowEndModal(handleShowEndModal);
     };
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!usernameSet || confederateName) return;
+
+    const id = setInterval(async () => {
+      try {
+        const name = await fetchConfederate();
+        if (name) setConfederateName(name);
+      } catch (e) {
+        // network error — will retry on next tick
+      }
+    }, 3000);
+
+    return () => clearInterval(id);
+  }, [usernameSet, confederateName]);
 
   const handleSetUsername = (e) => {
     e.preventDefault();

@@ -69,6 +69,14 @@ public class GameHub : Hub
         await Clients.All.SendAsync("NewConfederate", name);
     }
 
+    /// <summary>
+    /// Returns the current confederate name (used by participant on reconnect).
+    /// </summary>
+    public Task<string> GetConfederate()
+    {
+        return Task.FromResult(_gameService.State.ConfederateName ?? string.Empty);
+    }
+
     #endregion
 
     #region Chat
@@ -254,8 +262,18 @@ public class GameHub : Hub
     {
         if (Enum.TryParse<GameResolutionType>(data.GameResolutionType, out var resolutionType))
         {
+            var answer = data.TeamAnswer;
+
+            await _telemetryRepository.SaveAsync(new TelemetryEvent
+            {
+                User = _gameService.State.ParticipantName ?? "Unknown",
+                Confederate = _gameService.State.ConfederateName,
+                Action = TelemetryAction.TeamAnswerSet,
+                Answer = answer,
+                Timestamp = DateTime.UtcNow
+            });
             _gameService.State.PendingResolutionType = resolutionType;
-            _gameService.State.TeamAnswer = data.TeamAnswer;
+            _gameService.State.TeamAnswer = answer;
             await Clients.All.SendAsync("SetAnswer", data.TeamAnswer ?? string.Empty);
         }
     }
