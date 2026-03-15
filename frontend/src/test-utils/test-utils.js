@@ -5,6 +5,7 @@ import { I18nextProvider , initReactI18next } from 'react-i18next';
 import i18n from 'i18next';
 
 import { ChimesConfigProvider } from '../context/ChimesConfigContext';
+import { FeatureToggleProvider } from '../context/FeatureToggleContext';
 
 // Initialize test i18n instance
 // eslint-disable-next-line import/no-named-as-default-member
@@ -89,9 +90,11 @@ export function renderWithProviders(
     return (
       <I18nextProvider i18n={testI18n}>
         <BrowserRouter>
-          <ChimesConfigProvider>
-            {children}
-          </ChimesConfigProvider>
+          <FeatureToggleProvider>
+            <ChimesConfigProvider>
+              {children}
+            </ChimesConfigProvider>
+          </FeatureToggleProvider>
         </BrowserRouter>
       </I18nextProvider>
     );

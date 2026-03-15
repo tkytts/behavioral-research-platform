@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useFeatureActive, useFeatureConfig } from "../context/FeatureToggleContext";
 
 import ChatBox from "../components/ChatBox";
 import GameBox from "../components/GameBox";
@@ -52,8 +53,10 @@ function Experimenter() {
   const [scripts, setScripts] = useState({});
   const [areScriptsCollapsed, setAreScriptsCollapsed] = useState(true);
   const [isSimulating, setIsSimulating] = useState(false);
-  const [typingWpm, setTypingWpm] = useState(null);
   const scriptsContainerRef = useRef(null);
+  const showDashboard = useFeatureActive("dashboard");
+  const showScripts = useFeatureActive("scriptsModal");
+  const { typingWpm: configTypingWpm } = useFeatureConfig("scriptsModal");
   const chatBoxRef = useRef(null);
   const { t } = useTranslation();
 
@@ -87,16 +90,9 @@ function Experimenter() {
     fetchCurrentUser();
   }, []);
 
-  useEffect(() => {
-    fetch("/config.json")
-      .then((r) => r.json())
-      .then((cfg) => setTypingWpm(cfg.typingWpm))
-      .catch((e) => console.error("Failed to load config.json:", e));
-  }, []);
-
   const handleScriptMessageClick = (msg) => {
-    if (isSimulating || !chatBoxRef.current || typingWpm === null) return;
-    const delay = 60000 / (typingWpm * 5);
+    if (isSimulating || !chatBoxRef.current) return;
+    const delay = 60000 / (configTypingWpm * 5);
     setIsSimulating(true);
     chatBoxRef.current.startTypingSimulation(msg, delay);
     setTimeout(() => setIsSimulating(false), msg.length * delay + 50);
@@ -296,7 +292,7 @@ function Experimenter() {
               {t("end_collection")}
             </button>
           </div>
-          {confederateName && (
+          {confederateName && showDashboard && (
             <div className="mt-3">
               <div className="card p-3">
                 <div className="dashboard-stat">
@@ -325,7 +321,7 @@ function Experimenter() {
           <div className="row">
             <GameBox isAdmin={true} className="col-12" />
           </div>
-          {confederateName && currentScript && (
+          {confederateName && currentScript && showScripts && (
             <div className="mt-1">
               <div className="card p-3">
                 <div className="scripts-modal-header">

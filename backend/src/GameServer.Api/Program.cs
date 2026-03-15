@@ -31,6 +31,12 @@ builder.Services.AddCors(options =>
 builder.Services.Configure<GameSettings>(
     builder.Configuration.GetSection(GameSettings.SectionName));
 
+// Configure feature settings
+builder.Services.AddOptions<FeatureSettings>()
+    .Bind(builder.Configuration.GetSection(FeatureSettings.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 // Add application and infrastructure services
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();

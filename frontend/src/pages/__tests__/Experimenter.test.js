@@ -4,6 +4,14 @@ import userEvent from '@testing-library/user-event';
 import Experimenter from '../Experimenter';
 import { renderWithProviders } from '../../test-utils/test-utils';
 
+// Mock FeatureToggleContext
+jest.mock('../../api/config', () => ({
+  getFeatures: jest.fn().mockResolvedValue({
+    dashboard: { active: true },
+    scriptsModal: { active: true, typingWpm: 60 },
+  }),
+}));
+
 // Mock ChimesConfigContext to prevent real game calls
 jest.mock('../../context/ChimesConfigContext', () => ({
   ChimesConfigProvider: ({ children }) => children,
@@ -136,10 +144,12 @@ describe('Experimenter Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Provide a fetch mock for the config.json useEffect.
-    global.fetch = jest.fn(() =>
-      Promise.resolve({ json: () => Promise.resolve({ typingWpm: 60 }) })
-    );
+    // Re-establish getFeatures default after clearAllMocks
+    const configMock = require('../../api/config');
+    configMock.getFeatures.mockResolvedValue({
+      dashboard: { active: true },
+      scriptsModal: { active: true, typingWpm: 60 },
+    });
 
     // Re-establish data-returning implementations that clearAllMocks resets.
     const confederatesMock = require('../../data/confederates');
@@ -684,6 +694,49 @@ describe('Experimenter Component', () => {
     });
   });
 
+  describe('Feature Toggles', () => {
+    async function startGame() {
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+      const startGameButton = screen.getAllByRole('button')[0];
+      await userEvent.click(startGameButton);
+      await screen.findByTestId('modal');
+      await userEvent.click(screen.getByText('start'));
+      await waitFor(() => expect(screen.queryByRole('combobox')).not.toBeInTheDocument());
+    }
+
+    it('hides dashboard card when dashboard.active is false', async () => {
+      const configMock = require('../../api/config');
+      configMock.getFeatures.mockResolvedValue({
+        dashboard: { active: false },
+        scriptsModal: { active: true, typingWpm: 60 },
+      });
+
+      renderWithProviders(<Experimenter />);
+      await startGame();
+
+      await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+
+      expect(screen.queryByText('Problem')).not.toBeInTheDocument();
+    });
+
+    it('hides scripts panel when scriptsModal.active is false', async () => {
+      const configMock = require('../../api/config');
+      configMock.getFeatures.mockResolvedValue({
+        dashboard: { active: true },
+        scriptsModal: { active: false, typingWpm: 60 },
+      });
+
+      renderWithProviders(<Experimenter />);
+      await startGame();
+
+      await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+
+      expect(screen.queryByText('Confederate Scripts')).not.toBeInTheDocument();
+    });
+  });
+
   describe('Points and Time Configuration', () => {
     it('should have default points value of 7', async () => {
       renderWithProviders(<Experimenter />);
@@ -759,18 +812,17 @@ describe('Experimenter Component', () => {
       await waitFor(() => expect(screen.queryByRole('combobox')).not.toBeInTheDocument());
     }
 
-    it('fetches /config.json on mount', async () => {
-      // global.fetch is already set by beforeEach; just verify it was called.
+    it('calls getFeatures on mount', async () => {
+      const { getFeatures } = require('../../api/config');
       renderWithProviders(<Experimenter />);
 
-      await waitFor(() => expect(global.fetch).toHaveBeenCalledWith('/config.json'));
+      await waitFor(() => expect(getFeatures).toHaveBeenCalled());
     });
 
     it('script list items show pointer cursor when not simulating', async () => {
       renderWithProviders(<Experimenter />);
       await startGame();
 
-      // Wait for config fetch to resolve.
       await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
 
       const items = screen.getAllByRole('listitem');
@@ -782,7 +834,6 @@ describe('Experimenter Component', () => {
       renderWithProviders(<Experimenter />);
       await startGame();
 
-      // Wait for config fetch to resolve.
       await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
 
       const items = screen.getAllByRole('listitem');
@@ -792,22 +843,6 @@ describe('Experimenter Component', () => {
       // setTimeout that hasn't fired yet, so cursor should be not-allowed right now.
       screen.getAllByRole('listitem').forEach(li =>
         expect(li).toHaveStyle({ cursor: 'not-allowed' })
-      );
-    });
-
-    it('does not start simulation when config is not yet loaded', async () => {
-      // Override the beforeEach mock so fetch never resolves — typingWpm stays null.
-      global.fetch = jest.fn(() => new Promise(() => {}));
-
-      renderWithProviders(<Experimenter />);
-      await startGame();
-
-      const items = screen.getAllByRole('listitem');
-      await userEvent.click(within(items[0]).getByRole('button'));
-
-      // Guard fires (typingWpm === null) → isSimulating stays false → pointer.
-      screen.getAllByRole('listitem').forEach(li =>
-        expect(li).toHaveStyle({ cursor: 'pointer' })
       );
     });
   });

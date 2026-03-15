@@ -7,6 +7,7 @@ import reportWebVitals from './reportWebVitals';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './styles/minimal-theme.css';
 import { ChimesConfigProvider } from './context/ChimesConfigContext';
+import { FeatureToggleProvider } from './context/FeatureToggleContext';
 import './i18n';
 
 if (process.env.NODE_ENV === 'development') {
@@ -24,9 +25,11 @@ if (process.env.NODE_ENV === 'development') {
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <ChimesConfigProvider>
-    <App />
-    </ChimesConfigProvider>
+    <FeatureToggleProvider>
+      <ChimesConfigProvider>
+        <App />
+      </ChimesConfigProvider>
+    </FeatureToggleProvider>
   </React.StrictMode>
 );
 
