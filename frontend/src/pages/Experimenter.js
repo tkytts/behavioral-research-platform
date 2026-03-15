@@ -223,10 +223,10 @@ function Experimenter() {
 
     setCurrentProblem(0);
 
+    setConfederate(confederateName);
     startGame();
     setPointsAwarded(pointsAwarded);
     setMaxTime(maxTimeInput);
-    setConfederate(confederateName);
     setChimes({
       messageSent: enableMessageSentChimes,
       messageReceived: enableMessageReceivedChimes,
