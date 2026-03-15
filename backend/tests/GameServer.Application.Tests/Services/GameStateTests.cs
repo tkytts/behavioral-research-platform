@@ -91,6 +91,58 @@ public class GameStateTests
     }
 
     [Fact]
+    public void NewState_InterruptCountIsZero()
+    {
+        var state = new GameState();
+        state.GetAndResetInterruptCount().Should().Be(0);
+    }
+
+    [Fact]
+    public void IncrementInterruptCount_IncrementsCounter()
+    {
+        var state = new GameState();
+        state.IncrementInterruptCount();
+        state.IncrementInterruptCount();
+        state.GetAndResetInterruptCount().Should().Be(2);
+    }
+
+    [Fact]
+    public void GetAndResetInterruptCount_ResetsToZero()
+    {
+        var state = new GameState();
+        state.IncrementInterruptCount();
+        state.GetAndResetInterruptCount(); // consume
+        state.GetAndResetInterruptCount().Should().Be(0);
+    }
+
+    [Fact]
+    public void Reset_ClearsInterruptCount()
+    {
+        var state = new GameState();
+        state.IncrementInterruptCount();
+        state.Reset();
+        state.GetAndResetInterruptCount().Should().Be(0);
+    }
+
+    [Fact]
+    public void IncrementInterruptCount_IsThreadSafe()
+    {
+        // Arrange
+        var state = new GameState();
+        var tasks = new List<Task>();
+
+        // Act
+        for (int i = 0; i < 100; i++)
+        {
+            tasks.Add(Task.Run(() => state.IncrementInterruptCount()));
+        }
+        Task.WaitAll(tasks.ToArray());
+
+        // Assert
+        state.GetAndResetInterruptCount().Should().Be(100);
+    }
+
+    [Fact]
     public void NextProblem_WrapsAround()
     {
         // Arrange

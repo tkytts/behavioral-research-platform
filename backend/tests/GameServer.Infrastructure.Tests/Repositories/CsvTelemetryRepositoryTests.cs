@@ -56,8 +56,8 @@ public class CsvTelemetryRepositoryTests : IDisposable
         var files = Directory.GetFiles(_testLogPath, "*TestUser*.csv");
         files.Should().HaveCount(1);
         var content = await File.ReadAllTextAsync(files[0]);
-        content.Should().Contain("edit");
-        content.Should().Contain("message sent");
+        content.Should().Contain(TelemetryAction.Edit);
+        content.Should().Contain(TelemetryAction.MessageSent);
     }
 
     [Fact]

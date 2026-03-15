@@ -14,6 +14,7 @@ public class GameState
     private string? _participantName;
     private string? _confederateName;
     private int _currentScore;
+    private int _interruptCount;
     private int? _currentBlockIndex;
     private int? _currentProblemIndex;
     private bool _isLive;
@@ -184,6 +185,30 @@ public class GameState
     }
 
     /// <summary>
+    /// Increments the interrupt count by one.
+    /// </summary>
+    public void IncrementInterruptCount()
+    {
+        lock (_lock)
+        {
+            _interruptCount++;
+        }
+    }
+
+    /// <summary>
+    /// Returns the current interrupt count and resets it to zero.
+    /// </summary>
+    public int GetAndResetInterruptCount()
+    {
+        lock (_lock)
+        {
+            var count = _interruptCount;
+            _interruptCount = 0;
+            return count;
+        }
+    }
+
+    /// <summary>
     /// Resets the score to zero.
     /// </summary>
     public void ResetScore()
@@ -203,6 +228,7 @@ public class GameState
         {
             _messages = new List<Message>();
             _currentScore = 0;
+            _interruptCount = 0;
             _currentBlockIndex = null;
             _currentProblemIndex = null;
             _isLive = false;

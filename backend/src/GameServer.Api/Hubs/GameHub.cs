@@ -300,6 +300,15 @@ public class GameHub : Hub
     /// </summary>
     public async Task BlockFinished()
     {
+        var interruptCount = _gameService.State.GetAndResetInterruptCount();
+        await _telemetryRepository.SaveAsync(new TelemetryEvent
+        {
+            User = _gameService.State.ParticipantName ?? "Unknown",
+            Confederate = _gameService.State.ConfederateName,
+            Action = TelemetryAction.BlockInterrupts,
+            Text = interruptCount.ToString(),
+            Timestamp = DateTime.UtcNow
+        });
         await Clients.All.SendAsync("NewConfederate", string.Empty);
     }
 
@@ -365,6 +374,11 @@ public class GameHub : Hub
             Resolution = data.Resolution,
             Timestamp = data.Timestamp ?? DateTime.UtcNow
         });
+
+        if (data.Action == TelemetryAction.Interrupt)
+        {
+            _gameService.State.IncrementInterruptCount();
+        }
     }
 
     /// <summary>

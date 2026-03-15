@@ -1,7 +1,11 @@
 using FluentAssertions;
+using GameServer.Application;
 using GameServer.Application.DTOs;
+using GameServer.Domain.Constants;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace GameServer.Api.Tests;
@@ -118,6 +122,47 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
 
         // Assert
         confederate.Should().Be("TestConfederate");
+    }
+
+    [Fact]
+    public async Task BlockFinished_BroadcastsNewConfederate_WithInterrupts()
+    {
+        // Arrange
+        string? receivedConfederate = null;
+        _connection!.On<string>("NewConfederate", name => receivedConfederate = name);
+
+        await _connection.InvokeAsync("TelemetryEvent", new TelemetryEventDto("TestUser", null, TelemetryAction.Interrupt, null));
+        await _connection.InvokeAsync("TelemetryEvent", new TelemetryEventDto("TestUser", null, TelemetryAction.Interrupt, null));
+
+        // Act
+        await _connection.InvokeAsync("BlockFinished");
+        await Task.Delay(100);
+
+        // Assert
+        receivedConfederate.Should().Be(string.Empty);
+    }
+
+    [Fact]
+    public async Task BlockFinished_SavesBlockInterruptsTelemetry()
+    {
+        // Arrange
+        await _connection!.InvokeAsync("SetParticipantName", "IntegrationUser");
+
+        await _connection.InvokeAsync("TelemetryEvent", new TelemetryEventDto("IntegrationUser", null, TelemetryAction.Interrupt, null));
+        await _connection.InvokeAsync("TelemetryEvent", new TelemetryEventDto("IntegrationUser", null, TelemetryAction.Interrupt, null));
+        await _connection.InvokeAsync("TelemetryEvent", new TelemetryEventDto("IntegrationUser", null, TelemetryAction.Interrupt, null));
+
+        // Act
+        await _connection.InvokeAsync("BlockFinished");
+        await Task.Delay(100);
+
+        // Assert
+        var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
+        var files = Directory.GetFiles(settings.LogPath, "*.csv");
+        var allContent = await Task.WhenAll(files.Select(f => File.ReadAllTextAsync(f)));
+        var combined = string.Concat(allContent);
+        combined.Should().Contain(TelemetryAction.BlockInterrupts);
+        combined.Should().Contain(",3,");
     }
 
     [Fact]
