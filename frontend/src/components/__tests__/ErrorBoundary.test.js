@@ -41,9 +41,31 @@ describe('ErrorBoundary', () => {
         <ThrowingComponent />
       </ErrorBoundary>
     );
-    
+
     expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(screen.getByText('An error occurred')).toBeInTheDocument();
     expect(screen.getByText('Something went wrong.')).toBeInTheDocument();
+  });
+
+  it('renders a reload button', () => {
+    render(
+      <ErrorBoundary>
+        <ThrowingComponent />
+      </ErrorBoundary>
+    );
+
+    expect(screen.getByRole('button', { name: /reload page/i })).toBeInTheDocument();
+  });
+
+  it('calls console.error from componentDidCatch', () => {
+    console.error.mockClear();
+    render(
+      <ErrorBoundary>
+        <ThrowingComponent />
+      </ErrorBoundary>
+    );
+
+    expect(console.error).toHaveBeenCalled();
   });
 
   it('does not render children after error', () => {

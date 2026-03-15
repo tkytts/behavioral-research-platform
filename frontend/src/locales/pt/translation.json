@@ -123,5 +123,12 @@
     "notes_label": "Notas do(a) Pesquisador(a)",
     "notes_placeholder": "Digite suas anotações aqui...",
     "notes_marker_block": "Bloco",
-    "notes_marker_problem": "Problema"
+    "notes_marker_problem": "Problema",
+    "connection_failed": "Não foi possível conectar ao servidor. Por favor, recarregue a página.",
+    "connection_reconnecting": "Reconectando ao servidor…",
+    "error_loading_confederates": "Falha ao carregar os dados dos confederados. Por favor, recarregue a página.",
+    "error_loading_user": "Falha ao carregar dados do participante. Algumas funções podem estar limitadas.",
+    "waiting_network_issue": "Pode haver um problema de rede. Por favor, informe o pesquisador.",
+    "error_boundary_title": "Ocorreu um erro",
+    "error_boundary_reload": "Recarregar página"
 }

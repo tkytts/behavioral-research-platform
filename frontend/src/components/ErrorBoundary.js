@@ -11,12 +11,21 @@ class ErrorBoundary extends React.Component {
     return { hasError: true };
   }
   componentDidCatch(error, info) {
-    // Optionally log
-    // console.error(error, info);
+    console.error("[ErrorBoundary]", error, info);
   }
   render() {
     if (this.state.hasError) {
-      return <div role="alert">{i18n.t("error_boundary_message")}</div>;
+      return (
+        <div className="container mt-4">
+          <div className="alert alert-danger" role="alert">
+            <h4>{i18n.t("error_boundary_title")}</h4>
+            <p>{i18n.t("error_boundary_message")}</p>
+            <button className="btn btn-outline-danger" onClick={() => window.location.reload()}>
+              {i18n.t("error_boundary_reload")}
+            </button>
+          </div>
+        </div>
+      );
     }
     return this.props.children;
   }

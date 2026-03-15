@@ -123,5 +123,12 @@
     "notes_label": "Researcher Notes",
     "notes_placeholder": "Type your notes here...",
     "notes_marker_block": "Block",
-    "notes_marker_problem": "Problem"
+    "notes_marker_problem": "Problem",
+    "connection_failed": "Could not connect to server. Please reload the page.",
+    "connection_reconnecting": "Reconnecting to server…",
+    "error_loading_confederates": "Failed to load confederate data. Please reload the page.",
+    "error_loading_user": "Failed to load participant data. Some features may be limited.",
+    "waiting_network_issue": "There may be a network issue. Please inform the researcher.",
+    "error_boundary_title": "An error occurred",
+    "error_boundary_reload": "Reload page"
 }

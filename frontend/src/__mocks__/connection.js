@@ -10,4 +10,5 @@ const mockConnection = {
 };
 
 export const connectionReady = Promise.resolve();
+export const onConnectionStatusChange = jest.fn().mockReturnValue(jest.fn());
 export default mockConnection;

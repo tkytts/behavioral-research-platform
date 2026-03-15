@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useConnectionStatus } from "../hooks/useConnectionStatus";
 
 import ChatBox from "../components/ChatBox";
 import GameBox from "../components/GameBox";
@@ -16,12 +17,14 @@ import {
 } from "../realtime/game";
 
 function Participant() {
+  const connectionStatus = useConnectionStatus();
   const [currentUser, setCurrentUser] = useState("");
   const currentUserRef = useRef("");
   const [usernameSet, setUsernameSet] = useState(false);
   const [confederateName, setConfederateName] = useState("");
   const [ready, setReady] = useState(false);
   const [showGameEndedModal, setShowGameEndedModal] = useState(false);
+  const [pollErrorCount, setPollErrorCount] = useState(0);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -52,9 +55,9 @@ function Participant() {
     const id = setInterval(async () => {
       try {
         const name = await fetchConfederate();
-        if (name) setConfederateName(name);
+        if (name) { setConfederateName(name); setPollErrorCount(0); }
       } catch (e) {
-        // network error — will retry on next tick
+        setPollErrorCount(c => c + 1);
       }
     }, 3000);
 
@@ -78,6 +81,11 @@ function Participant() {
   return (
     <div className="container mt-4">
       <h1 className="text-center mb-4">{t('title')}</h1>
+      {(connectionStatus === 'failed' || connectionStatus === 'reconnecting') && (
+        <div className="alert alert-warning" role="alert">
+          {t(connectionStatus === 'failed' ? 'connection_failed' : 'connection_reconnecting')}
+        </div>
+      )}
 
       {!usernameSet && (
         <div className="mb-4">
@@ -100,6 +108,7 @@ function Participant() {
         <div className="modal" style={modalStyle}>
           <div className="modal-content" style={modalContentStyle}>
             <p>{t('waiting_for_other_player')}</p>
+            {pollErrorCount >= 5 && <p className="text-warning">{t('waiting_network_issue')}</p>}
           </div>
         </div>
       )}

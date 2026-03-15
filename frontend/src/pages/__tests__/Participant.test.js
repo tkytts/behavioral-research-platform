@@ -1,8 +1,16 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import Participant from '../Participant';
 import { renderWithProviders } from '../../test-utils/test-utils';
+
+jest.mock('../../hooks/useConnectionStatus', () => ({
+  useConnectionStatus: jest.fn().mockReturnValue('connecting'),
+}));
+
+jest.mock('../../api/game', () => ({
+  fetchConfederate: jest.fn(),
+}));
 
 // Mock ChimesConfigContext to prevent real game calls
 jest.mock('../../context/ChimesConfigContext', () => ({
@@ -62,6 +70,10 @@ jest.mock('../../components/Modal', () => {
 describe('Participant Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    const { useConnectionStatus } = require('../../hooks/useConnectionStatus');
+    useConnectionStatus.mockReturnValue('connecting');
+    const { fetchConfederate } = require('../../api/game');
+    fetchConfederate.mockResolvedValue(null);
   });
 
   describe('Initial Render', () => {
@@ -383,6 +395,132 @@ describe('Participant Component', () => {
         expect(screen.getByText('Second Confederate')).toBeInTheDocument();
       });
       expect(screen.getAllByRole('button').length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Connection Banner', () => {
+    it('shows warning when status is failed', () => {
+      const { useConnectionStatus } = require('../../hooks/useConnectionStatus');
+      useConnectionStatus.mockReturnValue('failed');
+      renderWithProviders(<Participant />);
+      expect(screen.getByText('Could not connect to server. Please reload the page.')).toBeInTheDocument();
+    });
+
+    it('shows warning when status is reconnecting', () => {
+      const { useConnectionStatus } = require('../../hooks/useConnectionStatus');
+      useConnectionStatus.mockReturnValue('reconnecting');
+      renderWithProviders(<Participant />);
+      expect(screen.getByText(/Reconnecting to server/)).toBeInTheDocument();
+    });
+  });
+
+  describe('Poll error counter', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('network issue text appears after 5 poll failures', async () => {
+      const { fetchConfederate } = require('../../api/game');
+      fetchConfederate.mockRejectedValue(new Error('network'));
+
+      renderWithProviders(<Participant />);
+
+      const input = screen.getByPlaceholderText('Your Name');
+      fireEvent.change(input, { target: { value: 'Test User' } });
+      fireEvent.click(screen.getByRole('button'));
+
+      await act(async () => {
+        jest.advanceTimersByTime(15000);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(screen.getByText('There may be a network issue. Please inform the researcher.')).toBeInTheDocument();
+    });
+
+    it('network issue text absent before 5 failures', async () => {
+      const { fetchConfederate } = require('../../api/game');
+      fetchConfederate.mockRejectedValue(new Error('network'));
+
+      renderWithProviders(<Participant />);
+
+      const input = screen.getByPlaceholderText('Your Name');
+      fireEvent.change(input, { target: { value: 'Test User' } });
+      fireEvent.click(screen.getByRole('button'));
+
+      await act(async () => {
+        jest.advanceTimersByTime(12000); // only 4 ticks
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(screen.queryByText('There may be a network issue. Please inform the researcher.')).not.toBeInTheDocument();
+    });
+
+    it('network issue text clears after a successful poll', async () => {
+      const { fetchConfederate } = require('../../api/game');
+      // Reject 5 times, then resolve with a name on the 6th tick
+      fetchConfederate
+        .mockRejectedValueOnce(new Error('network'))
+        .mockRejectedValueOnce(new Error('network'))
+        .mockRejectedValueOnce(new Error('network'))
+        .mockRejectedValueOnce(new Error('network'))
+        .mockRejectedValueOnce(new Error('network'))
+        .mockResolvedValue('Alice');
+
+      renderWithProviders(<Participant />);
+
+      const input = screen.getByPlaceholderText('Your Name');
+      fireEvent.change(input, { target: { value: 'Test User' } });
+      fireEvent.click(screen.getByRole('button'));
+
+      // 5 failures
+      await act(async () => {
+        jest.advanceTimersByTime(15000);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(screen.getByText('There may be a network issue. Please inform the researcher.')).toBeInTheDocument();
+
+      // 6th tick resolves with 'Alice' → confederate set, interval cleared
+      await act(async () => {
+        jest.advanceTimersByTime(3000);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(screen.queryByText('There may be a network issue. Please inform the researcher.')).not.toBeInTheDocument();
+    });
+
+    it('does not show network issue text when confederate already set', async () => {
+      let confederateHandler;
+      mockOnNewConfederate.mockImplementation(fn => { confederateHandler = fn; });
+
+      const { fetchConfederate } = require('../../api/game');
+      fetchConfederate.mockRejectedValue(new Error('network'));
+
+      renderWithProviders(<Participant />);
+
+      const input = screen.getByPlaceholderText('Your Name');
+      fireEvent.change(input, { target: { value: 'Test User' } });
+      fireEvent.click(screen.getByRole('button'));
+
+      // Set confederate immediately (clears the interval)
+      await act(async () => { confederateHandler('Alice'); });
+
+      // Advance timers — interval should already be cleared, no polls fire
+      await act(async () => {
+        jest.advanceTimersByTime(15000);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(screen.queryByText('There may be a network issue. Please inform the researcher.')).not.toBeInTheDocument();
     });
   });
 });

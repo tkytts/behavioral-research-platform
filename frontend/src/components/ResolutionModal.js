@@ -6,10 +6,11 @@ import { RESOLUTION_TYPES } from "../constants/resolutionTypes";
 
 function ResolutionModal({ isOpen, onClose }) {
   const [teamAnswer, setTeamAnswer] = useState("");
+  const [validationError, setValidationError] = useState("");
   const { t } = useTranslation();
 
   useEffect(() => {
-    if (isOpen) setTeamAnswer("");
+    if (isOpen) { setTeamAnswer(""); setValidationError(""); }
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -17,7 +18,7 @@ function ResolutionModal({ isOpen, onClose }) {
   const resolveGame = (gameResolutionType) => {
     const isTimeoutResolution = gameResolutionType === RESOLUTION_TYPES.TNP;
     if (!teamAnswer && !isTimeoutResolution) {
-      alert(t("please_provide_team_answer"));
+      setValidationError(t("please_provide_team_answer"));
       return;
     }
     setGameResolution({ gameResolutionType, teamAnswer: isTimeoutResolution ? "" : teamAnswer });
@@ -35,11 +36,12 @@ function ResolutionModal({ isOpen, onClose }) {
         </label>
         <input
           type="text"
-          className="form-control"
+          className={validationError ? "form-control is-invalid" : "form-control"}
           id="teamAnswer"
           value={teamAnswer}
-          onChange={(e) => setTeamAnswer(e.target.value)}
+          onChange={(e) => { setTeamAnswer(e.target.value); setValidationError(""); }}
         />
+        {validationError && <div className="invalid-feedback">{validationError}</div>}
       </div>
       <div className="d-flex justify-content-between mb-3">
         <button className="btn btn-success" onClick={() => resolveGame(RESOLUTION_TYPES.AP)}>

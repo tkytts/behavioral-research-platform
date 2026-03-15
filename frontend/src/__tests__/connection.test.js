@@ -132,4 +132,75 @@ describe('connection module', () => {
     await mod.connectionReady;
     expect(resolved).toBe(true);
   });
+
+  describe('listener pattern', () => {
+    it('exports onConnectionStatusChange as a function', () => {
+      mockStart.mockResolvedValueOnce(undefined);
+      const { onConnectionStatusChange } = require('../connection');
+      expect(typeof onConnectionStatusChange).toBe('function');
+    });
+
+    it('listener receives connected when start resolves', async () => {
+      mockStart.mockResolvedValueOnce(undefined);
+      const { onConnectionStatusChange } = require('../connection');
+      const listener = jest.fn();
+      onConnectionStatusChange(listener);
+      await Promise.resolve(); // flush start().then()
+      expect(listener).toHaveBeenCalledWith('connected');
+    });
+
+    it('listener receives failed when start rejects', async () => {
+      mockStart.mockRejectedValueOnce(new Error('Connection failed'));
+      const { onConnectionStatusChange } = require('../connection');
+      const listener = jest.fn();
+      onConnectionStatusChange(listener);
+      await Promise.resolve(); // flush rejected .then()
+      await Promise.resolve(); // flush .catch()
+      expect(listener).toHaveBeenCalledWith('failed');
+    });
+
+    it('listener receives reconnecting when onreconnecting fires', () => {
+      mockStart.mockResolvedValueOnce(undefined);
+      const { onConnectionStatusChange } = require('../connection');
+      const listener = jest.fn();
+      onConnectionStatusChange(listener);
+      const reconnectingCb = mockOnreconnecting.mock.calls[0][0];
+      reconnectingCb();
+      expect(listener).toHaveBeenCalledWith('reconnecting');
+    });
+
+    it('listener receives connected when onreconnected fires', () => {
+      mockStart.mockResolvedValueOnce(undefined);
+      const { onConnectionStatusChange } = require('../connection');
+      const listener = jest.fn();
+      onConnectionStatusChange(listener);
+      const reconnectedCb = mockOnreconnected.mock.calls[0][0];
+      reconnectedCb();
+      expect(listener).toHaveBeenCalledWith('connected');
+    });
+
+    it('cleanup function removes listener', () => {
+      mockStart.mockResolvedValueOnce(undefined);
+      const { onConnectionStatusChange } = require('../connection');
+      const listener = jest.fn();
+      const cleanup = onConnectionStatusChange(listener);
+      cleanup();
+      const reconnectingCb = mockOnreconnecting.mock.calls[0][0];
+      reconnectingCb();
+      expect(listener).not.toHaveBeenCalled();
+    });
+
+    it('multiple listeners all receive notifications', () => {
+      mockStart.mockResolvedValueOnce(undefined);
+      const { onConnectionStatusChange } = require('../connection');
+      const listener1 = jest.fn();
+      const listener2 = jest.fn();
+      onConnectionStatusChange(listener1);
+      onConnectionStatusChange(listener2);
+      const reconnectingCb = mockOnreconnecting.mock.calls[0][0];
+      reconnectingCb();
+      expect(listener1).toHaveBeenCalledWith('reconnecting');
+      expect(listener2).toHaveBeenCalledWith('reconnecting');
+    });
+  });
 });

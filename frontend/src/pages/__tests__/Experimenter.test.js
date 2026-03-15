@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event';
 import Experimenter from '../Experimenter';
 import { renderWithProviders } from '../../test-utils/test-utils';
 
+jest.mock('../../hooks/useConnectionStatus', () => ({
+  useConnectionStatus: jest.fn().mockReturnValue('connecting'),
+}));
+
 // Mock FeatureToggleContext
 jest.mock('../../api/config', () => ({
   getFeatures: jest.fn().mockResolvedValue({
@@ -237,13 +241,16 @@ jest.mock('../../components/ResolutionModal', () => {
 // Mock alert
 global.alert = jest.fn();
 
-
 // Get mock functions from the mocked module
 const mockFunctions = require('../../realtime/game');
 
 describe('Experimenter Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Reset useConnectionStatus to safe default after clearAllMocks
+    const { useConnectionStatus } = require('../../hooks/useConnectionStatus');
+    useConnectionStatus.mockReturnValue('connecting');
 
     // Re-establish getFeatures default after clearAllMocks
     const configMock = require('../../api/config');
@@ -933,6 +940,56 @@ describe('Experimenter Component', () => {
       screen.getAllByRole('listitem').forEach(li =>
         expect(li).toHaveStyle({ cursor: 'not-allowed' })
       );
+    });
+  });
+
+  describe('Connection Banner', () => {
+    it('shows warning alert when status is failed', () => {
+      const { useConnectionStatus } = require('../../hooks/useConnectionStatus');
+      useConnectionStatus.mockReturnValue('failed');
+      renderWithProviders(<Experimenter />);
+      expect(screen.getByText('Could not connect to server. Please reload the page.')).toBeInTheDocument();
+    });
+
+    it('shows warning alert when status is reconnecting', () => {
+      const { useConnectionStatus } = require('../../hooks/useConnectionStatus');
+      useConnectionStatus.mockReturnValue('reconnecting');
+      renderWithProviders(<Experimenter />);
+      expect(screen.getByText(/Reconnecting to server/)).toBeInTheDocument();
+    });
+
+    it('no banner when status is connecting', () => {
+      renderWithProviders(<Experimenter />);
+      expect(screen.queryByText(/Could not connect to server/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Reconnecting to server/)).not.toBeInTheDocument();
+    });
+
+    it('no banner when status is connected', () => {
+      const { useConnectionStatus } = require('../../hooks/useConnectionStatus');
+      useConnectionStatus.mockReturnValue('connected');
+      renderWithProviders(<Experimenter />);
+      expect(screen.queryByText(/Could not connect to server/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Reconnecting to server/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Data Loading Errors', () => {
+    it('shows danger alert when getConfederatesStart rejects', async () => {
+      const confederatesMock = require('../../data/confederates');
+      confederatesMock.getConfederatesStart.mockRejectedValue(new Error('net'));
+      renderWithProviders(<Experimenter />);
+      await waitFor(() => {
+        expect(screen.getByText('Failed to load confederate data. Please reload the page.')).toBeInTheDocument();
+      });
+    });
+
+    it('shows danger alert when getCurrentUser rejects', async () => {
+      const usersMock = require('../../api/users');
+      usersMock.getCurrentUser.mockRejectedValue(new Error('net'));
+      renderWithProviders(<Experimenter />);
+      await waitFor(() => {
+        expect(screen.getByText('Failed to load participant data. Some features may be limited.')).toBeInTheDocument();
+      });
     });
   });
 });

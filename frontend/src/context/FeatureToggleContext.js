@@ -15,9 +15,7 @@ export function FeatureToggleProvider({ children }) {
   useEffect(() => {
     getFeatures()
       .then((data) => setFeatures((prev) => ({ ...prev, ...data })))
-      .catch(() => {
-        // Silently fall back to defaults — non-critical
-      });
+      .catch((e) => console.warn("[FeatureToggleContext] Feature fetch failed, using defaults:", e.message));
   }, []);
 
   return (

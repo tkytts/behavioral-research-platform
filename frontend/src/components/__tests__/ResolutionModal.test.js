@@ -24,7 +24,6 @@ jest.mock('../Modal', () => {
 });
 
 const mockGame = require('../../realtime/game');
-global.alert = jest.fn();
 
 describe('ResolutionModal', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -60,13 +59,33 @@ describe('ResolutionModal', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('alerts when no answer provided for non-TNP', async () => {
+  it('shows inline validation message when no answer provided for AP', async () => {
     renderWithProviders(<ResolutionModal isOpen={true} onClose={jest.fn()} />);
 
     await userEvent.click(screen.getByText('AP'));
 
-    expect(global.alert).toHaveBeenCalled();
+    expect(screen.getByText('Please fill in the "Team Answer" field.')).toBeInTheDocument();
     expect(mockGame.setGameResolution).not.toHaveBeenCalled();
+  });
+
+  it('adds is-invalid class to input on validation failure', async () => {
+    renderWithProviders(<ResolutionModal isOpen={true} onClose={jest.fn()} />);
+
+    await userEvent.click(screen.getByText('AP'));
+
+    expect(screen.getByRole('textbox')).toHaveClass('is-invalid');
+  });
+
+  it('clears validation error when user types', async () => {
+    renderWithProviders(<ResolutionModal isOpen={true} onClose={jest.fn()} />);
+
+    await userEvent.click(screen.getByText('AP'));
+    expect(screen.getByText('Please fill in the "Team Answer" field.')).toBeInTheDocument();
+
+    await userEvent.type(screen.getByRole('textbox'), 'x');
+
+    expect(screen.queryByText('Please fill in the "Team Answer" field.')).not.toBeInTheDocument();
+    expect(screen.getByRole('textbox')).not.toHaveClass('is-invalid');
   });
 
   it('resets teamAnswer when reopened', async () => {

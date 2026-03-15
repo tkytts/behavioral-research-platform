@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useFeatureActive, useFeatureConfig } from "../context/FeatureToggleContext";
+import { useConnectionStatus } from "../hooks/useConnectionStatus";
 
 import ChatBox from "../components/ChatBox";
 import GameBox from "../components/GameBox";
@@ -36,6 +37,8 @@ import {
 } from "../realtime/game";
 
 function Experimenter() {
+  const connectionStatus = useConnectionStatus();
+  const [initError, setInitError] = useState(null);
   const [confederateName, setConfederateName] = useState("");
   const [gender, setGender] = useState("F");
   const [showGameConfigModal, setShowGameConfigModal] = useState(false);
@@ -67,7 +70,7 @@ function Experimenter() {
         const data = await getScriptForOrder(confederate.order);
         setCurrentScript(data);
       } catch (error) {
-        console.error("Error loading script:", error);
+        console.warn("Error loading script:", error);
       }
     };
     loadScript();
@@ -95,7 +98,7 @@ function Experimenter() {
         setConfederatesFemaleStart(femaleData);
         setConfederatesMaleStart(maleData);
       } catch (error) {
-        console.error("Error loading confederates data:", error);
+        setInitError(t("error_loading_confederates"));
       }
     };
     loadConfederates();
@@ -111,7 +114,7 @@ function Experimenter() {
         const data = await getSuggestions();
         setSuggestions(data);
       } catch (error) {
-        console.error("Error loading suggestions:", error);
+        console.warn("Error loading suggestions:", error);
       }
     };
     loadSuggestions();
@@ -126,7 +129,7 @@ function Experimenter() {
       const userData = await getCurrentUser();
       setCurrentParticipant(JSON.parse(userData));
     } catch (error) {
-      console.error("Error fetching current user data:", error);
+      setInitError(t("error_loading_user"));
     }
   };
 
@@ -213,6 +216,12 @@ function Experimenter() {
   return (
     <div className="container mt-4" style={{ overflow: "hidden" }}>
       <h1 className="text-center mb-4">{t("title")}</h1>
+      {(connectionStatus === 'failed' || connectionStatus === 'reconnecting') && (
+        <div className="alert alert-warning" role="alert">
+          {t(connectionStatus === 'failed' ? 'connection_failed' : 'connection_reconnecting')}
+        </div>
+      )}
+      {initError && <div className="alert alert-danger" role="alert">{initError}</div>}
 
       <div className="row align-items-start">
         <div className="col-md-6">
