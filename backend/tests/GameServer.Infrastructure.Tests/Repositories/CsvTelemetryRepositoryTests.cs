@@ -17,7 +17,7 @@ public class CsvTelemetryRepositoryTests : IDisposable
     {
         _testLogPath = Path.Combine(Path.GetTempPath(), $"test-logs-{Guid.NewGuid()}");
         var settings = Options.Create(new GameSettings { LogPath = _testLogPath });
-        _sut = new CsvTelemetryRepository(settings);
+        _sut = new CsvTelemetryRepository(settings, new SessionContext());
     }
 
     [Fact]
@@ -162,6 +162,53 @@ public class CsvTelemetryRepositoryTests : IDisposable
         // Assert
         var files = Directory.GetFiles(_testLogPath, "*Participant*.csv");
         files.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task SaveAsync_WithSessionFolder_WritesFileIntoSubdirectory()
+    {
+        // Arrange
+        var sessionFolder = "Alice_15-03-26";
+        var settings = Options.Create(new GameSettings { LogPath = _testLogPath });
+        var sessionContext = new SessionContext { SessionFolder = sessionFolder };
+        var sut = new CsvTelemetryRepository(settings, sessionContext);
+
+        var telemetryEvent = new TelemetryEvent
+        {
+            User = "Alice",
+            Action = TelemetryAction.Edit,
+            Timestamp = DateTime.UtcNow
+        };
+
+        // Act
+        await sut.SaveAsync(telemetryEvent);
+
+        // Assert
+        var subdir = Path.Combine(_testLogPath, sessionFolder);
+        var files = Directory.GetFiles(subdir, "*.csv");
+        files.Should().NotBeEmpty();
+        files.Should().AllSatisfy(f => f.Should().StartWith(subdir));
+    }
+
+    [Fact]
+    public async Task SaveAsync_WithNoSessionFolder_WritesFileIntoRootLogPath()
+    {
+        // Arrange
+        var telemetryEvent = new TelemetryEvent
+        {
+            User = "Alice",
+            Action = TelemetryAction.Edit,
+            Timestamp = DateTime.UtcNow
+        };
+
+        // Act
+        await _sut.SaveAsync(telemetryEvent);
+
+        // Assert
+        var files = Directory.GetFiles(_testLogPath, "*.csv");
+        files.Should().NotBeEmpty();
+        files.Should().AllSatisfy(f => f.Should().StartWith(_testLogPath));
+        Directory.GetDirectories(_testLogPath).Should().BeEmpty();
     }
 
     public void Dispose()

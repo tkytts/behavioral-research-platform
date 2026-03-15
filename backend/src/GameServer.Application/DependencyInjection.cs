@@ -14,6 +14,7 @@ public static class DependencyInjection
     {
         // Register GameState as singleton (shared across all connections)
         services.AddSingleton<GameState>();
+        services.AddSingleton<ISessionContext, SessionContext>();
 
         // Register services
         services.AddSingleton<IGameService, GameService>();

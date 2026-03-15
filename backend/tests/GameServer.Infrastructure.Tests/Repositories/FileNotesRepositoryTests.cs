@@ -15,15 +15,7 @@ public class FileNotesRepositoryTests : IDisposable
     {
         _testLogPath = Path.Combine(Path.GetTempPath(), $"test-notes-{Guid.NewGuid()}");
         var settings = Options.Create(new GameSettings { LogPath = _testLogPath });
-        _sut = new FileNotesRepository(settings);
-    }
-
-    [Fact]
-    public async Task SaveAsync_CreatesNotesSubdirectory()
-    {
-        await _sut.SaveAsync("test content");
-
-        Directory.Exists(Path.Combine(_testLogPath, "notes")).Should().BeTrue();
+        _sut = new FileNotesRepository(settings, new SessionContext());
     }
 
     [Fact]
@@ -31,7 +23,7 @@ public class FileNotesRepositoryTests : IDisposable
     {
         await _sut.SaveAsync("test content");
 
-        var files = Directory.GetFiles(Path.Combine(_testLogPath, "notes"), "notes_*.txt");
+        var files = Directory.GetFiles(_testLogPath, "notes_*.txt");
         files.Should().NotBeEmpty();
     }
 
@@ -42,7 +34,7 @@ public class FileNotesRepositoryTests : IDisposable
 
         await _sut.SaveAsync(notesText);
 
-        var files = Directory.GetFiles(Path.Combine(_testLogPath, "notes"), "notes_*.txt");
+        var files = Directory.GetFiles(_testLogPath, "notes_*.txt");
         var content = await File.ReadAllTextAsync(files[0]);
         content.Should().Contain(notesText);
     }
@@ -54,7 +46,26 @@ public class FileNotesRepositoryTests : IDisposable
 
         await _sut.SaveAsync("some notes");
 
-        Directory.Exists(Path.Combine(_testLogPath, "notes")).Should().BeTrue();
+        Directory.Exists(_testLogPath).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SaveAsync_WithSessionFolder_WritesIntoSubdirectory()
+    {
+        // Arrange
+        var sessionFolder = "Bob_15-03-26";
+        var settings = Options.Create(new GameSettings { LogPath = _testLogPath });
+        var sessionContext = new SessionContext { SessionFolder = sessionFolder };
+        var sut = new FileNotesRepository(settings, sessionContext);
+
+        // Act
+        await sut.SaveAsync("some notes content");
+
+        // Assert
+        var subdir = Path.Combine(_testLogPath, sessionFolder);
+        var files = Directory.GetFiles(subdir, "notes_*.txt");
+        files.Should().NotBeEmpty();
+        files.Should().AllSatisfy(f => f.Should().StartWith(subdir));
     }
 
     public void Dispose()

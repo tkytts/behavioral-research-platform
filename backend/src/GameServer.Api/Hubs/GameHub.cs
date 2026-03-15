@@ -3,6 +3,7 @@ using GameServer.Application.Interfaces;
 using GameServer.Domain.Constants;
 using GameServer.Domain.Entities;
 using GameServer.Domain.Enums;
+using GameServer.Infrastructure.Helpers;
 using Microsoft.AspNetCore.SignalR;
 
 namespace GameServer.Api.Hubs;
@@ -19,6 +20,7 @@ public class GameHub : Hub
     private readonly ITelemetryRepository _telemetryRepository;
     private readonly IChatLogRepository _chatLogRepository;
     private readonly INotesRepository _notesRepository;
+    private readonly ISessionContext _sessionContext;
     private readonly ILogger<GameHub> _logger;
 
     public GameHub(
@@ -28,6 +30,7 @@ public class GameHub : Hub
         ITelemetryRepository telemetryRepository,
         IChatLogRepository chatLogRepository,
         INotesRepository notesRepository,
+        ISessionContext sessionContext,
         ILogger<GameHub> logger)
     {
         _gameService = gameService;
@@ -36,6 +39,7 @@ public class GameHub : Hub
         _telemetryRepository = telemetryRepository;
         _chatLogRepository = chatLogRepository;
         _notesRepository = notesRepository;
+        _sessionContext = sessionContext;
         _logger = logger;
     }
 
@@ -60,6 +64,7 @@ public class GameHub : Hub
     {
         _logger.LogInformation("Participant connected: {Name}", name);
         _gameService.State.ParticipantName = name;
+        _sessionContext.SessionFolder = $"{FilenameHelper.SanitizeForFilename(name)}_{DateTime.UtcNow:dd-MM-yy}";
         return Task.CompletedTask;
     }
 

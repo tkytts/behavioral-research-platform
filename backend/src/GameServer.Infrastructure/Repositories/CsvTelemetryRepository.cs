@@ -6,6 +6,7 @@ using GameServer.Application;
 using GameServer.Application.Interfaces;
 using GameServer.Domain.Entities;
 using GameServer.Domain.Constants;
+using GameServer.Infrastructure.Helpers;
 using Microsoft.Extensions.Options;
 
 namespace GameServer.Infrastructure.Repositories;
@@ -17,12 +18,14 @@ namespace GameServer.Infrastructure.Repositories;
 public class CsvTelemetryRepository : ITelemetryRepository
 {
     private readonly string _logPath;
+    private readonly ISessionContext _sessionContext;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _fileLocks = new();
 
-    public CsvTelemetryRepository(IOptions<GameSettings> settings)
+    public CsvTelemetryRepository(IOptions<GameSettings> settings, ISessionContext sessionContext)
     {
         _logPath = settings.Value.LogPath;
-        EnsureDirectoryExists();
+        _sessionContext = sessionContext;
+        Directory.CreateDirectory(_logPath);
     }
 
     public async Task SaveAsync(TelemetryEvent telemetryEvent)
@@ -32,7 +35,9 @@ public class CsvTelemetryRepository : ITelemetryRepository
             ? (telemetryEvent.Confederate ?? telemetryEvent.User)
             : telemetryEvent.User;
         var date = DateTime.UtcNow.ToString("yyyy-MM-dd");
-        var filePath = Path.Combine(_logPath, $"telemetry_data_{SanitizeForFilename(user)}_{date}.csv");
+        var sessionPath = GetSessionPath();
+        Directory.CreateDirectory(sessionPath);
+        var filePath = Path.Combine(sessionPath, $"telemetry_data_{FilenameHelper.SanitizeForFilename(user)}_{date}.csv");
 
         var fileLock = _fileLocks.GetOrAdd(filePath, _ => new SemaphoreSlim(1, 1));
         await fileLock.WaitAsync();
@@ -82,28 +87,10 @@ public class CsvTelemetryRepository : ITelemetryRepository
         }
     }
 
-
-    private static string SanitizeForFilename(string? name)
-    {
-        if (string.IsNullOrEmpty(name))
-            return "unknown";
-
-        var invalid = Path.GetInvalidFileNameChars()
-            .Concat(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar })
-            .ToHashSet();
-
-        return new string(name.Where(c => !invalid.Contains(c)).ToArray())
-            .Replace("..", string.Empty)
-            .Trim();
-    }
-
-    private void EnsureDirectoryExists()
-    {
-        if (!Directory.Exists(_logPath))
-        {
-            Directory.CreateDirectory(_logPath);
-        }
-    }
+    private string GetSessionPath() =>
+        _sessionContext.SessionFolder is { } folder
+            ? Path.Combine(_logPath, folder)
+            : _logPath;
 
     /// <summary>
     /// Internal record for CSV serialization with proper column headers.

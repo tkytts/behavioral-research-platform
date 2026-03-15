@@ -11,22 +11,27 @@ namespace GameServer.Infrastructure.Repositories;
 public class FileChatLogRepository : IChatLogRepository
 {
     private readonly string _logPath;
+    private readonly ISessionContext _sessionContext;
 
-    public FileChatLogRepository(IOptions<GameSettings> settings)
+    public FileChatLogRepository(IOptions<GameSettings> settings, ISessionContext sessionContext)
     {
         _logPath = settings.Value.LogPath;
-        EnsureDirectoryExists();
+        _sessionContext = sessionContext;
+        Directory.CreateDirectory(_logPath);
     }
 
     public async Task SaveAsync(IReadOnlyList<Message> messages)
     {
         if (messages.Count == 0) return;
 
+        var sessionPath = GetSessionPath();
+        Directory.CreateDirectory(sessionPath);
+
         var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd_HH-mm-ss");
-        var filePath = Path.Combine(_logPath, $"chat_logs_{timestamp}.txt");
+        var filePath = Path.Combine(sessionPath, $"chat_logs_{timestamp}.txt");
 
         var content = $"Chat Log - {timestamp}\n\n" +
-            string.Join("\n", messages.Select(m => 
+            string.Join("\n", messages.Select(m =>
                 $"{m.FormattedTimestamp} - {m.User}: {m.Text}"));
 
         await File.WriteAllTextAsync(filePath, content);
@@ -34,18 +39,18 @@ public class FileChatLogRepository : IChatLogRepository
 
     public async Task SaveTutorialLogAsync(int numberOfTries)
     {
+        var sessionPath = GetSessionPath();
+        Directory.CreateDirectory(sessionPath);
+
         var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd_HH-mm-ss");
-        var filePath = Path.Combine(_logPath, $"tutorial_logs_{timestamp}.txt");
+        var filePath = Path.Combine(sessionPath, $"tutorial_logs_{timestamp}.txt");
 
         var content = $"Tutorial Log - {timestamp}\n\nTries: {numberOfTries}";
         await File.WriteAllTextAsync(filePath, content);
     }
 
-    private void EnsureDirectoryExists()
-    {
-        if (!Directory.Exists(_logPath))
-        {
-            Directory.CreateDirectory(_logPath);
-        }
-    }
+    private string GetSessionPath() =>
+        _sessionContext.SessionFolder is { } folder
+            ? Path.Combine(_logPath, folder)
+            : _logPath;
 }

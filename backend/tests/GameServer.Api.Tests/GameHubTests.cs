@@ -200,6 +200,24 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
     }
 
     [Fact]
+    public async Task SetParticipantName_RoutesSubsequentTelemetryIntoSessionSubfolder()
+    {
+        // Arrange
+        await _connection!.InvokeAsync("SetParticipantName", "Alice");
+
+        // Act
+        await _connection.InvokeAsync("TelemetryEvent", new TelemetryEventDto("Alice", null, TelemetryAction.Edit, null));
+        await Task.Delay(100);
+
+        // Assert
+        var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
+        var subfolders = Directory.GetDirectories(settings.LogPath, "Alice_*");
+        subfolders.Should().NotBeEmpty();
+        var files = Directory.GetFiles(subfolders[0], "*.csv");
+        files.Should().NotBeEmpty();
+    }
+
+    [Fact]
     public async Task Typing_NotifiesOtherClients()
     {
         // Arrange - Create second connection

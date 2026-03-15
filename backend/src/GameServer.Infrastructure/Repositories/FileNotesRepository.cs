@@ -10,20 +10,27 @@ namespace GameServer.Infrastructure.Repositories;
 public class FileNotesRepository : INotesRepository
 {
     private readonly string _logPath;
+    private readonly ISessionContext _sessionContext;
 
-    public FileNotesRepository(IOptions<GameSettings> settings)
+    public FileNotesRepository(IOptions<GameSettings> settings, ISessionContext sessionContext)
     {
         _logPath = settings.Value.LogPath;
+        _sessionContext = sessionContext;
     }
 
     public async Task SaveAsync(string content)
     {
-        var notesDir = Path.Combine(_logPath, "notes");
-        Directory.CreateDirectory(notesDir);
+        var sessionPath = GetSessionPath();
+        Directory.CreateDirectory(sessionPath);
 
         var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd_HH-mm-ss");
-        var filePath = Path.Combine(notesDir, $"notes_{timestamp}.txt");
+        var filePath = Path.Combine(sessionPath, $"notes_{timestamp}.txt");
         var fileContent = $"Researcher Notes — {timestamp}\n\n{content}";
         await File.WriteAllTextAsync(filePath, fileContent);
     }
+
+    private string GetSessionPath() =>
+        _sessionContext.SessionFolder is { } folder
+            ? Path.Combine(_logPath, folder)
+            : _logPath;
 }
