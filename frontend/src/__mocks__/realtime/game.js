@@ -54,3 +54,4 @@ export const setParticipantName = jest.fn().mockResolvedValue(undefined);
 export const getChimes = jest.fn().mockResolvedValue(undefined);
 export const setGameResolution = jest.fn().mockResolvedValue(undefined);
 export const telemetryEvent = jest.fn().mockResolvedValue(undefined);
+export const saveNotes = jest.fn().mockResolvedValue(undefined);

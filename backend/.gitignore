@@ -70,3 +70,6 @@ appsettings.Local.json
 
 # User secrets
 secrets.json
+
+# Private research scripts (keep local only — see scripts.example.json for structure)
+src/GameServer.Api/Resources/scripts.json

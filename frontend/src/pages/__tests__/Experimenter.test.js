@@ -135,6 +135,105 @@ jest.mock('../../components/ExperimenterNotes', () => {
   };
 });
 
+jest.mock('../../components/GameConfigModal', () => {
+  const React = require('react');
+  return function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, confederatesMaleStart, initialGender, initialConfederateName }) {
+    const [gender, setGender] = React.useState('F');
+    const [pts, setPts] = React.useState(7);
+    const [mt, setMt] = React.useState(75);
+    const [mr, setMr] = React.useState(true);
+    const [ms, setMs] = React.useState(true);
+    const [tmr, setTmr] = React.useState(true);
+
+    if (!isOpen) return null;
+
+    // Compute confederateName synchronously from props (no effect timing issues)
+    const pool = gender === 'F' ? confederatesFemaleStart : confederatesMaleStart;
+    const confederateName = initialConfederateName || pool?.[0]?.name || '';
+
+    return (
+      <div data-testid="modal">
+        <h2>game_configuration</h2>
+        <label>
+          <input type="radio" name="gender" value="F" checked={gender === 'F'} onChange={() => setGender('F')} /> female
+        </label>
+        <label>
+          <input type="radio" name="gender" value="M" checked={gender === 'M'} onChange={() => setGender('M')} /> male
+        </label>
+        <select value={confederateName} onChange={() => {}}>
+          <option value="" disabled>select_confederate_name</option>
+          {(pool || []).map((c, i) => <option key={i} value={c.name}>{c.name}</option>)}
+        </select>
+        <input type="number" value={pts} onChange={e => setPts(Number(e.target.value))} />
+        <input type="number" value={mt} onChange={e => setMt(Number(e.target.value))} />
+        <input type="checkbox" checked={mr} onChange={e => setMr(e.target.checked)} />
+        <input type="checkbox" checked={ms} onChange={e => setMs(e.target.checked)} />
+        <input type="checkbox" checked={tmr} onChange={e => setTmr(e.target.checked)} />
+        <button onClick={() => onSave({ confederateName, gender, pointsAwarded: pts, maxTimeInput: mt, chimes: { messageSent: ms, messageReceived: mr, timer: tmr } })}>start</button>
+        <button onClick={onClose}>cancel</button>
+      </div>
+    );
+  };
+});
+
+jest.mock('../../components/ExperimenterDashboard', () => {
+  return function ExperimenterDashboard({ currentProblem, currentScript, currentConfederateIndex, suggestions }) {
+    const resolution = currentScript?.resolutions?.[currentProblem]?.resolution;
+    const suggestion = suggestions?.[currentConfederateIndex]?.[currentProblem];
+    return (
+      <div data-testid="experimenter-dashboard">
+        <span>Problem</span>
+        <span>{currentProblem + 1}</span>
+        {resolution && (
+          <>
+            <span>Resolution</span>
+            <span>{resolution}</span>
+          </>
+        )}
+        {suggestion && (
+          <>
+            <span>Possible team answer</span>
+            <span>{suggestion}</span>
+          </>
+        )}
+      </div>
+    );
+  };
+});
+
+jest.mock('../../components/ScriptsPanel', () => {
+  const React = require('react');
+  return function ScriptsPanel({ currentScript }) {
+    const [collapsed, setCollapsed] = React.useState(true);
+    const [isSimulating, setIsSimulating] = React.useState(false);
+    if (!currentScript) return null;
+    return (
+      <div data-testid="scripts-panel">
+        <span>Confederate Scripts</span>
+        <button onClick={() => setCollapsed(!collapsed)}>
+          {collapsed ? 'Expand All' : 'Collapse All'}
+        </button>
+        <ul>
+          <li style={{ cursor: isSimulating ? 'not-allowed' : 'pointer' }}>
+            <button onClick={() => setIsSimulating(true)}>Initiating conversations</button>
+          </li>
+        </ul>
+      </div>
+    );
+  };
+});
+
+jest.mock('../../components/ResolutionModal', () => {
+  return function ResolutionModal({ isOpen, onClose }) {
+    if (!isOpen) return null;
+    return (
+      <div data-testid="resolution-modal">
+        <button onClick={onClose}>close-resolution</button>
+      </div>
+    );
+  };
+});
+
 // Mock alert
 global.alert = jest.fn();
 
@@ -401,7 +500,7 @@ describe('Experimenter Component', () => {
       await userEvent.click(resolveButton);
 
       await waitFor(() => {
-        expect(screen.getByTestId('modal')).toBeInTheDocument();
+        expect(screen.getByTestId('resolution-modal')).toBeInTheDocument();
       });
     });
   });

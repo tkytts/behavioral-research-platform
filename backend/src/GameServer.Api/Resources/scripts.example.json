@@ -1,0 +1,39 @@
+{
+  "_comment": "This is an example structure. Copy this file to scripts.json and replace placeholders with actual content.",
+  "script_0": {
+    "orders": [1, 10],
+    "message_groups": {
+      "start_conversation": {
+        "messages": ["<opening message>"]
+      },
+      "express_opinions": {
+        "messages": ["<opinion mentioning placeholder _>", "_"]
+      },
+      "agree": {
+        "messages": ["<agreement message>"]
+      },
+      "disagree": {
+        "messages": ["<disagreement message>"]
+      },
+      "ask_answer_questions": {
+        "messages": ["<question ending with ?>"]
+      },
+      "when_points_obtained": {
+        "messages": ["<celebration message>"]
+      },
+      "when_points_not_obtained": {
+        "messages": ["<encouragement message>"]
+      },
+      "laugh": {
+        "messages": ["haha", "lol"]
+      }
+    },
+    "resolutions": [
+      { "problem": 0, "resolution": "AP" },
+      { "problem": 1, "resolution": "ANP" },
+      { "problem": 2, "resolution": "DP" },
+      { "problem": 3, "resolution": "DNP" },
+      { "problem": 4, "resolution": "TNP" }
+    ]
+  }
+}
