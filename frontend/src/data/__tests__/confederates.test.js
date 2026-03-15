@@ -1,61 +1,48 @@
-import { getConfederatesStart } from '../confederates';
+import { getConfederatesStart, getScriptForOrder } from '../confederates';
+import * as confederatesApi from '../../api/confederates';
+
+jest.mock('../../api/confederates');
 
 describe('confederates data', () => {
-  let mockFetch;
-
-  beforeEach(() => {
-    mockFetch = jest.fn();
-    global.fetch = mockFetch;
-  });
-
   afterEach(() => {
     jest.resetAllMocks();
   });
 
   describe('getConfederatesStart', () => {
-    it('fetches both female and male confederates data', async () => {
-      const femaleData = [{ name: 'Female1' }];
-      const maleData = [{ name: 'Male1' }];
+    it('calls getConfederates and remaps to femaleData/maleData', async () => {
+      const femaleData = [{ name: 'Female1', order: 1, gender: 'F' }];
+      const maleData = [{ name: 'Male1', order: 1, gender: 'M' }];
 
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(femaleData)
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(maleData)
-        });
+      confederatesApi.getConfederates.mockResolvedValueOnce({ female: femaleData, male: maleData });
 
       const result = await getConfederatesStart();
 
-      expect(mockFetch).toHaveBeenCalledWith('/confederates/confederates_f.json');
-      expect(mockFetch).toHaveBeenCalledWith('/confederates/confederates_m.json');
+      expect(confederatesApi.getConfederates).toHaveBeenCalled();
       expect(result).toEqual({ femaleData, maleData });
     });
 
-    it('throws error when female fetch fails', async () => {
-      mockFetch
-        .mockResolvedValueOnce({ ok: false })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) });
+    it('propagates errors from getConfederates', async () => {
+      confederatesApi.getConfederates.mockRejectedValueOnce(new Error('Network error'));
 
-      await expect(getConfederatesStart()).rejects.toThrow('Failed to fetch confederates data.');
+      await expect(getConfederatesStart()).rejects.toThrow('Network error');
+    });
+  });
+
+  describe('getScriptForOrder', () => {
+    it('calls getScript with the given order', async () => {
+      const script = { orders: [1, 10], message_groups: {}, resolutions: [] };
+      confederatesApi.getScript.mockResolvedValueOnce(script);
+
+      const result = await getScriptForOrder(1);
+
+      expect(confederatesApi.getScript).toHaveBeenCalledWith(1);
+      expect(result).toEqual(script);
     });
 
-    it('throws error when male fetch fails', async () => {
-      mockFetch
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) })
-        .mockResolvedValueOnce({ ok: false });
+    it('propagates errors from getScript', async () => {
+      confederatesApi.getScript.mockRejectedValueOnce(new Error('Not found'));
 
-      await expect(getConfederatesStart()).rejects.toThrow('Failed to fetch confederates data.');
-    });
-
-    it('throws error when both fetches fail', async () => {
-      mockFetch
-        .mockResolvedValueOnce({ ok: false })
-        .mockResolvedValueOnce({ ok: false });
-
-      await expect(getConfederatesStart()).rejects.toThrow('Failed to fetch confederates data.');
+      await expect(getScriptForOrder(99)).rejects.toThrow('Not found');
     });
   });
 });

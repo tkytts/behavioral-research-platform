@@ -8,7 +8,7 @@ import Modal from "../components/Modal";
 import ExperimenterNotes from "../components/ExperimenterNotes";
 import { getCurrentUser } from "../api/users";
 import { getSuggestions } from "../api/blocks";
-import { getConfederatesStart, getScripts, getScriptForOrder } from "../data/confederates";
+import { getConfederatesStart, getScriptForOrder } from "../data/confederates";
 import {
   onTutorialDone,
   offTutorialDone,
@@ -52,7 +52,7 @@ function Experimenter() {
   const [numTries, setNumTries] = useState(1);
   const [collectionEnded, setCollectionEnded] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
-  const [scripts, setScripts] = useState({});
+  const [currentScript, setCurrentScript] = useState(null);
   const [areScriptsCollapsed, setAreScriptsCollapsed] = useState(true);
   const [isSimulating, setIsSimulating] = useState(false);
   const scriptsContainerRef = useRef(null);
@@ -103,16 +103,22 @@ function Experimenter() {
   };
 
   useEffect(() => {
-    const loadScripts = async () => {
+    const confederatesList = gender === "F" ? confederatesFemaleStart : confederatesMaleStart;
+    const confederate = confederatesList.find((c) => c.name === confederateName);
+    if (!confederate?.order) {
+      setCurrentScript(null);
+      return;
+    }
+    const loadScript = async () => {
       try {
-        const data = await getScripts();
-        setScripts(data);
+        const data = await getScriptForOrder(confederate.order);
+        setCurrentScript(data);
       } catch (error) {
-        console.error("Error loading scripts:", error);
+        console.error("Error loading script:", error);
       }
     };
-    loadScripts();
-  }, []);
+    loadScript();
+  }, [confederateName, gender, confederatesFemaleStart, confederatesMaleStart]);
 
   useEffect(() => {
     const loadSuggestions = async () => {
@@ -258,8 +264,6 @@ function Experimenter() {
 
   const confederates = gender === "F" ? confederatesFemaleStart : confederatesMaleStart;
   const currentConfederateIndex = confederates.findIndex((c) => c.name === confederateName);
-  const currentConfederate = confederates.find((c) => c.name === confederateName);
-  const currentScript = getScriptForOrder(scripts, currentConfederate?.order);
   const expectedResolution = currentScript?.resolutions?.[currentProblem]?.resolution;
   const currentSuggestion = suggestions[currentConfederateIndex]?.[currentProblem];
   const isLastProblemOfLastBlock =

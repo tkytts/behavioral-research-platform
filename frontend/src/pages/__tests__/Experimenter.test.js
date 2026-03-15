@@ -39,27 +39,25 @@ jest.mock('../../api/blocks', () => ({
 }));
 
 jest.mock('../../data/confederates', () => {
-  const scriptsData = {
-    script_0: {
-      orders: [1, 10],
-      message_groups: {
-        start_conversation: { messages: ['hello'] },
-        express_opinions: { messages: ['opinion'] },
-        agree: { messages: ['yes'] },
-        disagree: { messages: ['no'] },
-        ask_answer_questions: { messages: ['question?'] },
-        when_points_obtained: { messages: ['great!'] },
-        when_points_not_obtained: { messages: ['oh no'] },
-        laugh: { messages: ['haha'] },
-      },
-      resolutions: [
-        { problem: 0, resolution: 'DNP' },
-        { problem: 1, resolution: 'AP' },
-        { problem: 2, resolution: 'TNP' },
-        { problem: 3, resolution: 'DP' },
-        { problem: 4, resolution: 'ANP' },
-      ],
+  const scriptData = {
+    orders: [1, 10],
+    message_groups: {
+      start_conversation: { messages: ['hello'] },
+      express_opinions: { messages: ['opinion'] },
+      agree: { messages: ['yes'] },
+      disagree: { messages: ['no'] },
+      ask_answer_questions: { messages: ['question?'] },
+      when_points_obtained: { messages: ['great!'] },
+      when_points_not_obtained: { messages: ['oh no'] },
+      laugh: { messages: ['haha'] },
     },
+    resolutions: [
+      { problem: 0, resolution: 'DNP' },
+      { problem: 1, resolution: 'AP' },
+      { problem: 2, resolution: 'TNP' },
+      { problem: 3, resolution: 'DP' },
+      { problem: 4, resolution: 'ANP' },
+    ],
   };
   return {
     getConfederatesStart: jest.fn(() =>
@@ -76,10 +74,7 @@ jest.mock('../../data/confederates', () => {
         ],
       })
     ),
-    getScripts: jest.fn(() => Promise.resolve(scriptsData)),
-    getScriptForOrder: jest.fn((scripts, order) => {
-      return Object.values(scripts || {}).find(s => s.orders?.includes(order)) || null;
-    }),
+    getScriptForOrder: jest.fn(() => Promise.resolve(scriptData)),
   };
 });
 
@@ -172,27 +167,25 @@ describe('Experimenter Component', () => {
         { name: 'Frank', order: 6 },
       ],
     });
-    confederatesMock.getScripts.mockResolvedValue({
-      script_0: {
-        orders: [1, 10],
-        message_groups: {
-          start_conversation: { messages: ['hello'] },
-          express_opinions: { messages: ['opinion'] },
-          agree: { messages: ['yes'] },
-          disagree: { messages: ['no'] },
-          ask_answer_questions: { messages: ['question?'] },
-          when_points_obtained: { messages: ['great!'] },
-          when_points_not_obtained: { messages: ['oh no'] },
-          laugh: { messages: ['haha'] },
-        },
-        resolutions: [
-          { problem: 0, resolution: 'DNP' },
-          { problem: 1, resolution: 'AP' },
-          { problem: 2, resolution: 'TNP' },
-          { problem: 3, resolution: 'DP' },
-          { problem: 4, resolution: 'ANP' },
-        ],
+    confederatesMock.getScriptForOrder.mockResolvedValue({
+      orders: [1, 10],
+      message_groups: {
+        start_conversation: { messages: ['hello'] },
+        express_opinions: { messages: ['opinion'] },
+        agree: { messages: ['yes'] },
+        disagree: { messages: ['no'] },
+        ask_answer_questions: { messages: ['question?'] },
+        when_points_obtained: { messages: ['great!'] },
+        when_points_not_obtained: { messages: ['oh no'] },
+        laugh: { messages: ['haha'] },
       },
+      resolutions: [
+        { problem: 0, resolution: 'DNP' },
+        { problem: 1, resolution: 'AP' },
+        { problem: 2, resolution: 'TNP' },
+        { problem: 3, resolution: 'DP' },
+        { problem: 4, resolution: 'ANP' },
+      ],
     });
     const blocksMock = require('../../api/blocks');
     blocksMock.getSuggestions.mockResolvedValue([
@@ -247,16 +240,6 @@ describe('Experimenter Component', () => {
 
       await waitFor(() => {
         expect(getCurrentUser).toHaveBeenCalled();
-      });
-    });
-
-    it('should load scripts on mount', async () => {
-      const { getScripts } = require('../../data/confederates');
-
-      renderWithProviders(<Experimenter />);
-
-      await waitFor(() => {
-        expect(getScripts).toHaveBeenCalled();
       });
     });
 

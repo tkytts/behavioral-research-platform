@@ -12,6 +12,8 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
         services.AddSingleton<IBlockRepository, JsonBlockRepository>();
+        services.AddSingleton<IConfederateRepository, JsonConfederateRepository>();
+        services.AddSingleton<IScriptRepository, JsonScriptRepository>();
         services.AddSingleton<ITelemetryRepository, CsvTelemetryRepository>();
         services.AddSingleton<IChatLogRepository, FileChatLogRepository>();
         services.AddSingleton<INotesRepository, FileNotesRepository>();
