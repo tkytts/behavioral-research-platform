@@ -600,6 +600,7 @@ describe('Experimenter Component', () => {
 
       await userEvent.click(screen.getByRole('button', { name: /end session/i }));
 
+      expect(mockFunctions.blockFinished).not.toHaveBeenCalled();
       expect(mockFunctions.stopGame).not.toHaveBeenCalled();
       expect(mockFunctions.clearChat).not.toHaveBeenCalled();
       expect(mockFunctions.telemetryEvent).not.toHaveBeenCalled();
@@ -613,6 +614,13 @@ describe('Experimenter Component', () => {
       await userEvent.click(screen.getByRole('button', { name: /end session/i }));
 
       expect(screen.queryByText('Session ended. Data saved.')).not.toBeInTheDocument();
+    });
+
+    it('should call blockFinished when confirm is accepted', async () => {
+      confirmSpy.mockReturnValue(true);
+      renderWithProviders(<Experimenter />);
+      await userEvent.click(screen.getByRole('button', { name: /end session/i }));
+      expect(mockFunctions.blockFinished).toHaveBeenCalled();
     });
 
     it('should call stopGame when confirm is accepted', async () => {
@@ -653,9 +661,10 @@ describe('Experimenter Component', () => {
       expect(mockFunctions.gameEnded).toHaveBeenCalled();
     });
 
-    it('should call stopGame before clearChat, and clearChat before gameEnded', async () => {
+    it('should call blockFinished before stopGame, stopGame before clearChat, and clearChat before gameEnded', async () => {
       confirmSpy.mockReturnValue(true);
       const callOrder = [];
+      mockFunctions.blockFinished.mockImplementation(() => { callOrder.push('blockFinished'); });
       mockFunctions.stopGame.mockImplementation(() => { callOrder.push('stopGame'); });
       mockFunctions.clearChat.mockImplementation(() => { callOrder.push('clearChat'); });
       mockFunctions.gameEnded.mockImplementation(() => { callOrder.push('gameEnded'); });
@@ -663,6 +672,7 @@ describe('Experimenter Component', () => {
       renderWithProviders(<Experimenter />);
       await userEvent.click(screen.getByRole('button', { name: /end session/i }));
 
+      expect(callOrder.indexOf('blockFinished')).toBeLessThan(callOrder.indexOf('stopGame'));
       expect(callOrder.indexOf('stopGame')).toBeLessThan(callOrder.indexOf('clearChat'));
       expect(callOrder.indexOf('clearChat')).toBeLessThan(callOrder.indexOf('gameEnded'));
     });

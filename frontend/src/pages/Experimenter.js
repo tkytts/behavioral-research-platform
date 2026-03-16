@@ -203,6 +203,7 @@ function Experimenter() {
     }
     localStorage.removeItem("experimenter_notes");
     setNotesClearKey((k) => k + 1);
+    blockFinished();
     stopGame();
     clearChat();
     telemetryEvent({ action: "CollectionEnded", user: currentParticipant });
