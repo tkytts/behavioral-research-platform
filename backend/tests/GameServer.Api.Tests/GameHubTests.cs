@@ -295,4 +295,23 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
         // Assert: polling endpoint must return "" during inter-block interval
         gameService.State.ConfederateName.Should().BeNull();
     }
+
+    [Fact]
+    public async Task TutorialDone_ClearsConfederateName()
+    {
+        // Arrange: simulate a stale confederate name from the tutorial (e.g. "Julio")
+        var gameService = _factory.Services.GetRequiredService<IGameService>();
+        gameService.State.ConfederateName = "Julio";
+
+        string? receivedConfederate = null;
+        _connection!.On<string>("NewConfederate", name => receivedConfederate = name);
+
+        // Act
+        await _connection.InvokeAsync("TutorialDone", 1);
+        await Task.Delay(100);
+
+        // Assert: state is cleared and clients are notified
+        gameService.State.ConfederateName.Should().BeNull();
+        receivedConfederate.Should().Be(string.Empty);
+    }
 }

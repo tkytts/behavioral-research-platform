@@ -430,6 +430,8 @@ public class GameHub : Hub
     public async Task TutorialDone(int numTries)
     {
         await _chatLogRepository.SaveTutorialLogAsync(numTries);
+        _gameService.State.ConfederateName = null;
+        await Clients.All.SendAsync("NewConfederate", string.Empty);
         await Clients.All.SendAsync("TutorialDone", numTries);
     }
 
