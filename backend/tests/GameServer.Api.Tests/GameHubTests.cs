@@ -280,4 +280,19 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
         gameService.State.PendingResolutionType.Should().BeNull();
         gameService.State.TeamAnswer.Should().BeNull();
     }
+
+    [Fact]
+    public async Task BlockFinished_ClearsConfederateName()
+    {
+        // Arrange: simulate a stale confederate name from the previous block
+        var gameService = _factory.Services.GetRequiredService<IGameService>();
+        gameService.State.ConfederateName = "Camila";
+
+        // Act
+        await _connection!.InvokeAsync("BlockFinished");
+        await Task.Delay(100);
+
+        // Assert: polling endpoint must return "" during inter-block interval
+        gameService.State.ConfederateName.Should().BeNull();
+    }
 }

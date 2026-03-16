@@ -329,6 +329,7 @@ public class GameHub : Hub
         _timerService.Stop();
         _gameService.State.PendingResolutionType = null;
         _gameService.State.TeamAnswer = null;
+        _gameService.State.ConfederateName = null;
 
         var interruptCount = _gameService.State.GetAndResetInterruptCount();
         await _telemetryRepository.SaveAsync(new TelemetryEvent
