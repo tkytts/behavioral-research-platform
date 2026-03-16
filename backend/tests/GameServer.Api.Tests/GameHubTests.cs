@@ -1,6 +1,7 @@
 using FluentAssertions;
 using GameServer.Application;
 using GameServer.Application.DTOs;
+using GameServer.Application.Interfaces;
 using GameServer.Domain.Constants;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -241,5 +242,42 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
 
         // Cleanup
         await connection2.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task BlockFinished_StopsRunningTimer()
+    {
+        // Arrange: start the timer so it is running
+        await _connection!.InvokeAsync("StartTimer");
+        await Task.Delay(100);
+        var timerService = _factory.Services.GetRequiredService<ITimerService>();
+        timerService.IsRunning.Should().BeTrue();
+
+        // Act
+        await _connection.InvokeAsync("BlockFinished");
+        await Task.Delay(100);
+
+        // Assert: timer must be stopped after block ends
+        timerService.IsRunning.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task BlockFinished_ClearsPendingResolutionAndTeamAnswer()
+    {
+        // Arrange: set a pending resolution to simulate mid-block state
+        var gameService = _factory.Services.GetRequiredService<IGameService>();
+        await _connection!.InvokeAsync("SetGameResolution",
+            new SetGameResolutionDto("AP", "someAnswer"));
+        await Task.Delay(100);
+        gameService.State.PendingResolutionType.Should().NotBeNull();
+        gameService.State.TeamAnswer.Should().Be("someAnswer");
+
+        // Act
+        await _connection.InvokeAsync("BlockFinished");
+        await Task.Delay(100);
+
+        // Assert: stale resolution state must be wiped before next block
+        gameService.State.PendingResolutionType.Should().BeNull();
+        gameService.State.TeamAnswer.Should().BeNull();
     }
 }

@@ -1,0 +1,1 @@
+After the participant finished the Tutorial, the system should clear the current confederate for the Experimenter to set up the game. Right now Julio (the last tutorial confederate) shows up on the Participant screen, this behavior is not correct.

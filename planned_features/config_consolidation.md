@@ -1,1 +1,0 @@
-consolidate scripts.json and blocks.json into one place (likely the backend), and have the frontend request what it needs via API. The backend can serve only the parts the frontend actually needs for rendering (messages, orders) and keep the resolution logic server-side. That way you have one source of truth, and the answer key isn't sitting in the browser.

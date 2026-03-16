@@ -178,10 +178,13 @@ function Experimenter() {
 
     setCurrentProblem(0);
 
+    // stopTimer + setMaxTime before setConfederate so the participant cannot
+    // click Ready before the new timer configuration is in place on the backend
+    stopTimer();
+    setMaxTime(maxTimeInput);
+    setPointsAwarded(pointsAwarded);
     setConfederate(newName);
     startGame();
-    setPointsAwarded(pointsAwarded);
-    setMaxTime(maxTimeInput);
     setChimes(chimes);
     updateProblemSelection({
       blockIndex: confederateBlock,
