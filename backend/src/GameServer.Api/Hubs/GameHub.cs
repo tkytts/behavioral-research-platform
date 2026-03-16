@@ -132,7 +132,7 @@ public class GameHub : Hub
     public async Task UpdateProblemSelection(ProblemSelectionDto selection)
     {
         _gameService.SetProblemSelection(selection.BlockIndex, selection.ProblemIndex);
-        var (block, problem) = _gameService.GetCurrentProblem();
+        var (block, problem) = await _gameService.GetCurrentProblem();
         await BroadcastProblemUpdate(block, problem);
     }
 
@@ -141,7 +141,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task FirstBlock()
     {
-        var (block, problem) = _gameService.FirstBlock();
+        var (block, problem) = await _gameService.FirstBlock();
         await BroadcastProblemUpdate(block, problem);
     }
 
@@ -150,7 +150,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task NextBlock()
     {
-        var (block, problem) = _gameService.NextBlock();
+        var (block, problem) = await _gameService.NextBlock();
         await BroadcastProblemUpdate(block, problem);
     }
 
@@ -167,7 +167,7 @@ public class GameHub : Hub
             Timestamp = DateTime.UtcNow
         });
 
-        var (block, problem) = _gameService.NextProblem();
+        var (block, problem) = await _gameService.NextProblem();
         await BroadcastProblemUpdate(block, problem);
     }
 

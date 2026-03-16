@@ -36,22 +36,22 @@ public interface IGameService
     /// <summary>
     /// Moves to the first block.
     /// </summary>
-    (Block? Block, string? Problem) FirstBlock();
+    Task<(Block? Block, string? Problem)> FirstBlock();
 
     /// <summary>
     /// Moves to the next block.
     /// </summary>
-    (Block? Block, string? Problem) NextBlock();
+    Task<(Block? Block, string? Problem)> NextBlock();
 
     /// <summary>
     /// Moves to the next problem.
     /// </summary>
-    (Block? Block, string? Problem) NextProblem();
+    Task<(Block? Block, string? Problem)> NextProblem();
 
     /// <summary>
     /// Gets the current block and problem.
     /// </summary>
-    (Block? Block, string? Problem) GetCurrentProblem();
+    Task<(Block? Block, string? Problem)> GetCurrentProblem();
 
     /// <summary>
     /// Resolves the current game round.

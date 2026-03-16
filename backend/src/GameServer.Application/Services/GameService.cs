@@ -12,7 +12,6 @@ public class GameService : IGameService
 {
     private readonly GameState _state;
     private readonly IBlockRepository _blockRepository;
-    private IReadOnlyList<Block>? _blocksCache;
     private int _pointsAwarded;
 
     public GameService(
@@ -48,27 +47,27 @@ public class GameService : IGameService
         _state.SetProblemSelection(blockIndex, problemIndex);
     }
 
-    public (Block? Block, string? Problem) FirstBlock()
+    public async Task<(Block? Block, string? Problem)> FirstBlock()
     {
         _state.FirstBlock();
-        return GetCurrentProblem();
+        return await GetCurrentProblem();
     }
 
-    public (Block? Block, string? Problem) NextBlock()
+    public async Task<(Block? Block, string? Problem)> NextBlock()
     {
         _state.NextBlock();
-        return GetCurrentProblem();
+        return await GetCurrentProblem();
     }
 
-    public (Block? Block, string? Problem) NextProblem()
+    public async Task<(Block? Block, string? Problem)> NextProblem()
     {
         _state.NextProblem();
-        return GetCurrentProblem();
+        return await GetCurrentProblem();
     }
 
-    public (Block? Block, string? Problem) GetCurrentProblem()
+    public async Task<(Block? Block, string? Problem)> GetCurrentProblem()
     {
-        var blocks = GetBlocksSync();
+        var blocks = await _blockRepository.GetAllAsync();
 
         if (!_state.CurrentBlockIndex.HasValue ||
             _state.CurrentBlockIndex < 0 ||
@@ -117,10 +116,4 @@ public class GameService : IGameService
         _state.ResetScore();
     }
 
-    private IReadOnlyList<Block> GetBlocksSync()
-    {
-        // Cache blocks since they don't change during runtime
-        _blocksCache ??= _blockRepository.GetAllAsync().GetAwaiter().GetResult();
-        return _blocksCache;
-    }
 }

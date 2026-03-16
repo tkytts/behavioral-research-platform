@@ -71,10 +71,10 @@ public class GameServiceTests
     #region Problem Navigation Tests
 
     [Fact]
-    public void FirstBlock_SetsIndicesCorrectly()
+    public async Task FirstBlock_SetsIndicesCorrectly()
     {
         // Act
-        var (block, problem) = _sut.FirstBlock();
+        var (block, problem) = await _sut.FirstBlock();
 
         // Assert
         _state.CurrentBlockIndex.Should().Be(0);
@@ -86,13 +86,13 @@ public class GameServiceTests
     }
 
     [Fact]
-    public void NextBlock_IncrementsBlockIndex()
+    public async Task NextBlock_IncrementsBlockIndex()
     {
         // Arrange
-        _sut.FirstBlock();
+        await _sut.FirstBlock();
 
         // Act
-        var (block, _) = _sut.NextBlock();
+        var (block, _) = await _sut.NextBlock();
 
         // Assert
         _state.CurrentBlockIndex.Should().Be(1);
@@ -101,13 +101,13 @@ public class GameServiceTests
     }
 
     [Fact]
-    public void NextProblem_IncrementsProblemIndex()
+    public async Task NextProblem_IncrementsProblemIndex()
     {
         // Arrange
-        _sut.FirstBlock();
+        await _sut.FirstBlock();
 
         // Act
-        var (_, problem) = _sut.NextProblem();
+        var (_, problem) = await _sut.NextProblem();
 
         // Assert
         _state.CurrentProblemIndex.Should().Be(1);
@@ -115,11 +115,11 @@ public class GameServiceTests
     }
 
     [Fact]
-    public void SetProblemSelection_SetsIndicesCorrectly()
+    public async Task SetProblemSelection_SetsIndicesCorrectly()
     {
         // Act
         _sut.SetProblemSelection(1, 0);
-        var (block, problem) = _sut.GetCurrentProblem();
+        var (block, problem) = await _sut.GetCurrentProblem();
 
         // Assert
         _state.CurrentBlockIndex.Should().Be(1);
