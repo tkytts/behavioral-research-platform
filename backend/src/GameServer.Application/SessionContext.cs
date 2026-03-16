@@ -5,4 +5,5 @@ namespace GameServer.Application;
 public class SessionContext : ISessionContext
 {
     public string? SessionFolder { get; set; }
+    public bool IsTutorial { get; set; }
 }

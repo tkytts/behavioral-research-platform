@@ -297,6 +297,57 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
     }
 
     [Fact]
+    public async Task StartTutorial_SetsIsTutorialTrue()
+    {
+        // Act
+        await _connection!.InvokeAsync("StartTutorial");
+        await Task.Delay(100);
+
+        // Assert
+        var sessionContext = _factory.Services.GetRequiredService<ISessionContext>();
+        sessionContext.IsTutorial.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task StartGame_ResetsIsTutorialToFalse()
+    {
+        // Arrange: mark session as tutorial first
+        await _connection!.InvokeAsync("StartTutorial");
+        await Task.Delay(100);
+        var sessionContext = _factory.Services.GetRequiredService<ISessionContext>();
+        sessionContext.IsTutorial.Should().BeTrue();
+
+        // Act
+        await _connection.InvokeAsync("StartGame");
+        await Task.Delay(100);
+
+        // Assert
+        sessionContext.IsTutorial.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task StartTutorial_SuppressesTelemetry()
+    {
+        // Arrange
+        await _connection!.InvokeAsync("SetParticipantName", "TutorialUser");
+        await _connection.InvokeAsync("StartTutorial");
+        await Task.Delay(100);
+
+        // Act
+        await _connection.InvokeAsync("TelemetryEvent",
+            new TelemetryEventDto("TutorialUser", null, TelemetryAction.Edit, null));
+        await Task.Delay(100);
+
+        // Assert: no CSV file should be written during tutorial
+        var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
+        var subfolders = Directory.GetDirectories(settings.LogPath, "TutorialUser_*");
+        var files = subfolders.Length > 0
+            ? Directory.GetFiles(subfolders[0], "*.csv")
+            : Directory.GetFiles(settings.LogPath, "*TutorialUser*.csv");
+        files.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task TutorialDone_ClearsConfederateName()
     {
         // Arrange: simulate a stale confederate name from the tutorial (e.g. "Julio")

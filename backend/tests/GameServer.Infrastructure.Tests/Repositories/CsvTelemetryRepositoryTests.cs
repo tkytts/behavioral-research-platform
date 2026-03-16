@@ -191,6 +191,52 @@ public class CsvTelemetryRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task SaveAsync_DoesNotCreateFile_WhenIsTutorialIsTrue()
+    {
+        // Arrange
+        var settings = Options.Create(new GameSettings { LogPath = _testLogPath });
+        var sessionContext = new SessionContext { IsTutorial = true };
+        var sut = new CsvTelemetryRepository(settings, sessionContext);
+
+        var telemetryEvent = new TelemetryEvent
+        {
+            User = "TutorialUser",
+            Action = TelemetryAction.Edit,
+            Timestamp = DateTime.UtcNow
+        };
+
+        // Act
+        await sut.SaveAsync(telemetryEvent);
+
+        // Assert
+        var files = Directory.GetFiles(_testLogPath, "*.csv");
+        files.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task SaveAsync_CreatesFile_WhenIsTutorialIsFalse()
+    {
+        // Arrange
+        var settings = Options.Create(new GameSettings { LogPath = _testLogPath });
+        var sessionContext = new SessionContext { IsTutorial = false };
+        var sut = new CsvTelemetryRepository(settings, sessionContext);
+
+        var telemetryEvent = new TelemetryEvent
+        {
+            User = "RealUser",
+            Action = TelemetryAction.Edit,
+            Timestamp = DateTime.UtcNow
+        };
+
+        // Act
+        await sut.SaveAsync(telemetryEvent);
+
+        // Assert
+        var files = Directory.GetFiles(_testLogPath, "*.csv");
+        files.Should().NotBeEmpty();
+    }
+
+    [Fact]
     public async Task SaveAsync_WithNoSessionFolder_WritesFileIntoRootLogPath()
     {
         // Arrange

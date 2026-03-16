@@ -9,6 +9,7 @@ import {
   offReceiveMessage,
   setMaxTime,
   setChimes,
+  startTutorial,
   tutorialDone
 } from "../realtime/game";
 import useTutorialSimulations from "../hooks/useTutorialSimulations";
@@ -85,6 +86,7 @@ function Tutorial() {
   const handleTutorialStep1 = () => {
     setCurrentUser(t("your_name"));
     setIsUsernameInitialized(true);
+    startTutorial();
     setMaxTime(75);
     setCurrentTutorialStep(1);
 

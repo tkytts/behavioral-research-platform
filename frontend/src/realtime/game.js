@@ -80,6 +80,7 @@ export const onReconnected = (handler) => {
 // Commands (invoke)
 
 // Game flow
+export const startTutorial = () => invokeWhenReady("StartTutorial");
 export const startGame = () => invokeWhenReady("StartGame");
 export const blockFinished = () => invokeWhenReady("BlockFinished");
 export const gameEnded = () => invokeWhenReady("GameEnded");

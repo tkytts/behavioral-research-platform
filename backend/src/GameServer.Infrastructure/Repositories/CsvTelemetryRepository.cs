@@ -30,6 +30,9 @@ public class CsvTelemetryRepository : ITelemetryRepository
 
     public async Task SaveAsync(TelemetryEvent telemetryEvent)
     {
+        if (_sessionContext.IsTutorial)
+            return;
+
         var isConfederateMessage = telemetryEvent.Action == TelemetryAction.ConfederateMessage;
         var user = isConfederateMessage
             ? (telemetryEvent.Confederate ?? telemetryEvent.User)

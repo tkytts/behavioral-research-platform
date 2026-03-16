@@ -234,10 +234,20 @@ public class GameHub : Hub
     #region Game Control
 
     /// <summary>
+    /// Marks the current session as a tutorial, suppressing telemetry writes.
+    /// </summary>
+    public Task StartTutorial()
+    {
+        _sessionContext.IsTutorial = true;
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
     /// Starts the game.
     /// </summary>
     public async Task StartGame()
     {
+        _sessionContext.IsTutorial = false;
         _gameService.StartGame();
 
         await _telemetryRepository.SaveAsync(new TelemetryEvent

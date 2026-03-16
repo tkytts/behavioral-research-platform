@@ -32,6 +32,7 @@ jest.mock('../../realtime/game', () => ({
   offReceiveMessage: jest.fn(),
   setMaxTime: jest.fn(),
   setChimes: jest.fn(),
+  startTutorial: jest.fn(),
   setConfederate: jest.fn(),
   tutorialProblem: jest.fn(),
   startTimer: jest.fn(),
@@ -182,6 +183,17 @@ describe('Tutorial Component', () => {
       // Should call tutorial setup functions
       await waitFor(() => {
         expect(mockFunctions.setMaxTime).toHaveBeenCalledWith(75);
+      });
+    });
+
+    it('calls startTutorial when the ready button is clicked', async () => {
+      renderWithProviders(<Tutorial />);
+
+      const buttons = screen.getAllByRole('button');
+      await userEvent.click(buttons[0]);
+
+      await waitFor(() => {
+        expect(mockFunctions.startTutorial).toHaveBeenCalledTimes(1);
       });
     });
 
