@@ -1,1 +1,0 @@
-The interrupt counter feature recently implemented has a bug: it does not register the last block's total count. Needs to register all of the blocks' interrupt totals
