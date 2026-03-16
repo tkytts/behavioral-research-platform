@@ -124,6 +124,7 @@
     "notes_placeholder": "Digite suas anotações aqui...",
     "notes_marker_block": "Bloco",
     "notes_marker_problem": "Problema",
+    "notes_marker_resolution": "Resolução",
     "connection_failed": "Não foi possível conectar ao servidor. Por favor, recarregue a página.",
     "connection_reconnecting": "Reconectando ao servidor…",
     "error_loading_confederates": "Falha ao carregar os dados dos confederados. Por favor, recarregue a página.",

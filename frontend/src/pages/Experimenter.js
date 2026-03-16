@@ -55,6 +55,7 @@ function Experimenter() {
   const showScripts = useFeatureActive("scriptsModal");
   const showNotes = useFeatureActive("notes");
   const [notesClearKey, setNotesClearKey] = useState(0);
+  const [lastResolution, setLastResolution] = useState(null);
   const { typingWpm: configTypingWpm } = useFeatureConfig("scriptsModal");
   const [currentScript, setCurrentScript] = useState(null);
 
@@ -167,6 +168,7 @@ function Experimenter() {
 
   const openResolutionModal = () => setShowResolutionModal(true);
   const closeResolutionModal = () => setShowResolutionModal(false);
+  const handleResolved = (type) => setLastResolution({ type, timestamp: Date.now() });
 
   const handleSave = ({ confederateName: newName, gender: newGender, pointsAwarded, maxTimeInput, chimes }) => {
     setConfederateName(newName);
@@ -276,6 +278,7 @@ function Experimenter() {
           currentBlockIndex={currentConfederateIndex}
           currentProblem={currentProblem}
           confederateName={confederateName}
+          lastResolution={lastResolution}
         />
       )}
       {collectionEnded && (
@@ -295,7 +298,7 @@ function Experimenter() {
         initialGender={gender}
       />
 
-      <ResolutionModal isOpen={showResolutionModal} onClose={closeResolutionModal} />
+      <ResolutionModal isOpen={showResolutionModal} onClose={closeResolutionModal} onResolved={handleResolved} />
       {showTutorialCompleteModal && (
         <Modal onClose={() => setShowTutorialCompleteModal(false)}>
           <h2>{t("tutorial_complete")}</h2>

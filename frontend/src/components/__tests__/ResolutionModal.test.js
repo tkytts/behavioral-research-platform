@@ -88,6 +88,56 @@ describe('ResolutionModal', () => {
     expect(screen.getByRole('textbox')).not.toHaveClass('is-invalid');
   });
 
+  it('calls onResolved with "AP" when AP clicked with answer', async () => {
+    const onResolved = jest.fn();
+    renderWithProviders(<ResolutionModal isOpen={true} onClose={jest.fn()} onResolved={onResolved} />);
+
+    await userEvent.type(screen.getByRole('textbox'), 'some answer');
+    await userEvent.click(screen.getByText('AP'));
+
+    expect(onResolved).toHaveBeenCalledWith('AP');
+  });
+
+  it('calls onResolved with "TNP" when TNP clicked', async () => {
+    const onResolved = jest.fn();
+    renderWithProviders(<ResolutionModal isOpen={true} onClose={jest.fn()} onResolved={onResolved} />);
+
+    await userEvent.click(screen.getByText('TNP'));
+
+    expect(onResolved).toHaveBeenCalledWith('TNP');
+  });
+
+  it.each([
+    ['ANP', 'ANP'],
+    ['DP', 'DP'],
+    ['DNP', 'DNP'],
+  ])('calls onResolved with "%s" when that button is clicked', async (label, type) => {
+    const onResolved = jest.fn();
+    renderWithProviders(<ResolutionModal isOpen={true} onClose={jest.fn()} onResolved={onResolved} />);
+
+    await userEvent.type(screen.getByRole('textbox'), 'answer');
+    await userEvent.click(screen.getByText(label));
+
+    expect(onResolved).toHaveBeenCalledWith(type);
+  });
+
+  it('does not call onResolved when validation fails', async () => {
+    const onResolved = jest.fn();
+    renderWithProviders(<ResolutionModal isOpen={true} onClose={jest.fn()} onResolved={onResolved} />);
+
+    await userEvent.click(screen.getByText('AP'));
+
+    expect(onResolved).not.toHaveBeenCalled();
+  });
+
+  it('works without onResolved prop (no crash)', async () => {
+    renderWithProviders(<ResolutionModal isOpen={true} onClose={jest.fn()} />);
+
+    await userEvent.click(screen.getByText('TNP'));
+
+    // no error thrown
+  });
+
   it('resets teamAnswer when reopened', async () => {
     const { rerender } = renderWithProviders(<ResolutionModal isOpen={true} onClose={jest.fn()} />);
 

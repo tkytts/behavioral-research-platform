@@ -4,7 +4,7 @@ import Modal from "./Modal";
 import { setGameResolution } from "../realtime/game";
 import { RESOLUTION_TYPES } from "../constants/resolutionTypes";
 
-function ResolutionModal({ isOpen, onClose }) {
+function ResolutionModal({ isOpen, onClose, onResolved }) {
   const [teamAnswer, setTeamAnswer] = useState("");
   const [validationError, setValidationError] = useState("");
   const { t } = useTranslation();
@@ -22,6 +22,9 @@ function ResolutionModal({ isOpen, onClose }) {
       return;
     }
     setGameResolution({ gameResolutionType, teamAnswer: isTimeoutResolution ? "" : teamAnswer });
+    if (onResolved) {
+      onResolved(gameResolutionType);
+    }
     onClose();
   };
 

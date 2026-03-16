@@ -16,6 +16,7 @@ testI18n.use(initReactI18next).init({
         notes_placeholder: 'Type your notes here...',
         notes_marker_block: 'Block',
         notes_marker_problem: 'Problem',
+        notes_marker_resolution: 'Resolution',
       },
     },
   },
@@ -103,6 +104,93 @@ describe('ExperimenterNotes', () => {
       </I18nextProvider>
     );
     expect(screen.getByRole('textbox').value).toContain('Problem 2');
+  });
+
+  it('appends resolution marker when lastResolution changes', () => {
+    const { rerender } = renderNotes({ lastResolution: null });
+    rerender(
+      <I18nextProvider i18n={testI18n}>
+        <ExperimenterNotes
+          currentBlockIndex={0}
+          currentProblem={0}
+          confederateName="Ana"
+          lastResolution={{ type: 'AP', timestamp: 1000 }}
+        />
+      </I18nextProvider>
+    );
+    expect(screen.getByRole('textbox').value).toContain('Resolution: AP');
+  });
+
+  it('marker contains the resolution type string', () => {
+    const { rerender } = renderNotes({ lastResolution: null });
+    rerender(
+      <I18nextProvider i18n={testI18n}>
+        <ExperimenterNotes
+          currentBlockIndex={0}
+          currentProblem={0}
+          confederateName="Ana"
+          lastResolution={{ type: 'TNP', timestamp: 2000 }}
+        />
+      </I18nextProvider>
+    );
+    expect(screen.getByRole('textbox').value).toContain('TNP');
+  });
+
+  it('does not append marker on mount when lastResolution is null', () => {
+    renderNotes({ lastResolution: null });
+    expect(screen.getByRole('textbox').value).toBe('');
+  });
+
+  it('does not append a second marker when rerendered with identical lastResolution object', () => {
+    const resolution = { type: 'AP', timestamp: 3000 };
+    const { rerender } = renderNotes({ lastResolution: resolution });
+    rerender(
+      <I18nextProvider i18n={testI18n}>
+        <ExperimenterNotes
+          currentBlockIndex={0}
+          currentProblem={0}
+          confederateName="Ana"
+          lastResolution={resolution}
+        />
+      </I18nextProvider>
+    );
+    const value = screen.getByRole('textbox').value;
+    const count = (value.match(/Resolution: AP/g) || []).length;
+    expect(count).toBe(1);
+  });
+
+  it('appends a second marker when timestamp changes for same type', () => {
+    const { rerender } = renderNotes({ lastResolution: { type: 'AP', timestamp: 4000 } });
+    rerender(
+      <I18nextProvider i18n={testI18n}>
+        <ExperimenterNotes
+          currentBlockIndex={0}
+          currentProblem={0}
+          confederateName="Ana"
+          lastResolution={{ type: 'AP', timestamp: 5000 }}
+        />
+      </I18nextProvider>
+    );
+    const value = screen.getByRole('textbox').value;
+    const count = (value.match(/Resolution: AP/g) || []).length;
+    expect(count).toBe(2);
+  });
+
+  it('moves cursor to end on focus', () => {
+    renderNotes();
+    const textarea = screen.getByRole('textbox');
+    fireEvent.change(textarea, { target: { value: 'hello' } });
+    const spy = jest.spyOn(textarea, 'setSelectionRange');
+    fireEvent.focus(textarea);
+    expect(spy).toHaveBeenCalledWith(5, 5);
+  });
+
+  it('calls setSelectionRange(0, 0) on focus when textarea is empty', () => {
+    renderNotes();
+    const textarea = screen.getByRole('textbox');
+    const spy = jest.spyOn(textarea, 'setSelectionRange');
+    fireEvent.focus(textarea);
+    expect(spy).toHaveBeenCalledWith(0, 0);
   });
 
   it('clears notes when remounted via key change', () => {

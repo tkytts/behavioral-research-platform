@@ -124,6 +124,7 @@
     "notes_placeholder": "Type your notes here...",
     "notes_marker_block": "Block",
     "notes_marker_problem": "Problem",
+    "notes_marker_resolution": "Resolution",
     "connection_failed": "Could not connect to server. Please reload the page.",
     "connection_reconnecting": "Reconnecting to server…",
     "error_loading_confederates": "Failed to load confederate data. Please reload the page.",
