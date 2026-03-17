@@ -68,7 +68,12 @@ backend/
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/blocks` | Get all game blocks |
+| GET | `/api/suggestions` | Get problem suggestions |
 | GET | `/api/currentUser` | Get current participant name |
+| GET | `/api/game/confederate` | Get current confederate name |
+| GET | `/api/confederates` | Get confederate name lists |
+| GET | `/api/scripts` | Get typing simulation scripts |
+| GET | `/api/config/features` | Get feature toggle configuration |
 
 ### SignalR Hub (`/api/gamehub`)
 
@@ -130,13 +135,19 @@ Edit `src/GameServer.Api/appsettings.json`:
 {
   "Game": {
     "MaxTime": 120,
-    "PointsAwarded": 100,
+    "PointsAwarded": 7,
     "LogPath": "logs"
   },
   "Cors": {
     "AllowedOrigins": [
-      "http://localhost:3000"
+      "http://localhost:3000",
+      "http://localhost:5173"
     ]
+  },
+  "Features": {
+    "Dashboard": { "Active": true },
+    "ScriptsModal": { "Active": true, "TypingWpm": 60 },
+    "Notes": { "Active": true }
   }
 }
 ```
@@ -144,9 +155,13 @@ Edit `src/GameServer.Api/appsettings.json`:
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `Game:MaxTime` | 120 | Timer duration in seconds |
-| `Game:PointsAwarded` | 100 | Points per correct answer |
+| `Game:PointsAwarded` | 7 | Points per correct answer |
 | `Game:LogPath` | logs | Directory for CSV/log files |
 | `Cors:AllowedOrigins` | - | Allowed frontend URLs |
+| `Features:Dashboard:Active` | true | Enable experimenter dashboard |
+| `Features:ScriptsModal:Active` | true | Enable scripts typing modal |
+| `Features:ScriptsModal:TypingWpm` | 60 | Typing simulation speed (WPM) |
+| `Features:Notes:Active` | true | Enable experimenter notes |
 
 ## Testing
 

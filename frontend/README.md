@@ -49,13 +49,13 @@ REACT_APP_HUB_URL=http://localhost:5000/api/gamehub
 
 ```
 src/
-├── api/           # Backend API clients (client.js, users.js)
+├── api/           # Backend API clients (client.js, users.js, blocks.js, config.js, confederates.js, game.js)
 ├── data/          # Static data loaders (confederates.js)
 ├── components/    # Reusable UI components (Modal, ChatBox, GameBox, etc.)
 ├── pages/         # Route-level components (Experimenter, Participant, Tutorial)
 ├── realtime/      # SignalR helpers (game.js)
-├── hooks/         # Custom React hooks (useFontSize.js)
-├── context/       # React Context providers (ChimesConfigContext.js)
+├── hooks/         # Custom React hooks (useFontSize.js, useTutorialSimulations.js, useConnectionStatus.js)
+├── context/       # React Context providers (ChimesConfigContext.js, FeatureToggleContext.js)
 ├── constants/     # Application constants (resolutionTypes.js, languages.js)
 ├── locales/       # Translation files (en, pt)
 ├── styles/        # CSS and theme files (minimal-theme.css)

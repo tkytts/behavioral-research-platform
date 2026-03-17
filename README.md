@@ -36,14 +36,20 @@ A full-stack application for running behavioral experiments with real-time commu
 - [Node.js 18+](https://nodejs.org/) and npm
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 
-### One-Command Start (Windows)
+### One-Command Start
 
+**Windows:**
 ```bash
 start-dev.bat        # Full setup (runs npm install)
 start-dev-fast.bat   # Fast mode (skips npm install)
 ```
 
-This launches both backend and frontend in separate terminal windows.
+**Linux (tmux):**
+```bash
+./start-dev.sh        # Full setup (runs npm install)
+./start-dev-fast.sh   # Fast mode (skips npm install)
+./start-docker.sh     # Docker-based setup
+```
 
 ### Manual Setup
 
@@ -163,11 +169,16 @@ Edit `backend/src/GameServer.Api/appsettings.json`:
 {
   "Game": {
     "MaxTime": 120,
-    "PointsAwarded": 100,
+    "PointsAwarded": 7,
     "LogPath": "logs"
   },
   "Cors": {
     "AllowedOrigins": ["http://localhost:3000"]
+  },
+  "Features": {
+    "Dashboard": { "Active": true },
+    "ScriptsModal": { "Active": true, "TypingWpm": 60 },
+    "Notes": { "Active": true }
   }
 }
 ```
