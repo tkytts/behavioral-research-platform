@@ -41,7 +41,7 @@ builder.Services.AddOptions<FeatureSettings>()
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();
 builder.Services.AddHostedService<TimerBroadcastService>();
-builder.WebHost.UseUrls("http://localhost:5000");
+builder.WebHost.UseUrls(Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "http://localhost:5000");
 
 var app = builder.Build();
 

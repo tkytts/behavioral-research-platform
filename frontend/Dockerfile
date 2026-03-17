@@ -4,6 +4,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+# Bake relative URLs so the build works behind any hostname (ngrok, localhost, etc.)
+ARG REACT_APP_API_URL=/api
+ARG REACT_APP_HUB_URL=/api/gamehub
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ENV REACT_APP_HUB_URL=$REACT_APP_HUB_URL
 RUN npm run build
 
 # Production stage

@@ -24,6 +24,7 @@ RUN dotnet publish "GameServer.Api.csproj" -c Release -o /app/publish /p:UseAppH
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 EXPOSE 8080
 COPY --from=publish /app/publish .
