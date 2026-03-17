@@ -20,6 +20,7 @@ function Participant() {
   const connectionStatus = useConnectionStatus();
   const [currentUser, setCurrentUser] = useState("");
   const currentUserRef = useRef("");
+  const messageRef = useRef(null);
   const [usernameSet, setUsernameSet] = useState(false);
   const [confederateName, setConfederateName] = useState("");
   const [ready, setReady] = useState(false);
@@ -31,6 +32,7 @@ function Participant() {
     currentUserRef.current = currentUser;
 
     const handleNewConfederate = (name) => {
+      messageRef.current?.blur();
       setConfederateName(name);
       setReady(false);
     };
@@ -38,6 +40,7 @@ function Participant() {
     onNewConfederate(handleNewConfederate);
 
     const handleShowEndModal = () => {
+      messageRef.current?.blur();
       setShowGameEndedModal(true);
     };
 
@@ -128,7 +131,7 @@ function Participant() {
 
       {usernameSet && (
         <div className="row">
-          <ChatBox currentUser={currentUser} isAdmin={false} disabled={false} />
+          <ChatBox currentUser={currentUser} isAdmin={false} disabled={false} messageRef={messageRef} />
           <GameBox isAdmin={false} />
         </div>
       )}

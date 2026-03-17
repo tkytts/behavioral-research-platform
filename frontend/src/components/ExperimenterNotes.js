@@ -26,10 +26,10 @@ function ExperimenterNotes({ currentBlockIndex, currentProblem, confederateName,
       prevProblemRef.current = currentProblem;
 
       const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      const marker = `[${time} — ${t("notes_marker_block")} ${currentBlockIndex + 1} (${confederateName}), ${t("notes_marker_problem")} ${currentProblem + 1}]:`;
+      const marker = `[${time} — ${t("notes_marker_block")} ${currentBlockIndex + 1} (${confederateName}), ${t("notes_marker_problem")} ${currentProblem + 1}]: `;
 
       setNotes((prev) => {
-        const updated = prev ? `${prev}\n${marker}\n` : `${marker}\n`;
+        const updated = prev ? `${prev}\n${marker}` : `${marker}`;
         localStorage.setItem(STORAGE_KEY, updated);
         return updated;
       });
@@ -46,7 +46,7 @@ function ExperimenterNotes({ currentBlockIndex, currentProblem, confederateName,
     prevResolutionTimestampRef.current = lastResolution.timestamp;
 
     const time = new Date(lastResolution.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    const marker = `[${time} — ${t("notes_marker_resolution")}: ${lastResolution.type}]:`;
+    const marker = `[${time} — ${t("notes_marker_resolution")}: ${lastResolution.type}]`;
 
     setNotes((prev) => {
       const updated = prev ? `${prev}\n${marker}\n` : `${marker}\n`;

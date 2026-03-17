@@ -46,9 +46,10 @@ jest.mock('../../realtime/game', () => ({
 
 // Mock child components
 jest.mock('../../components/ChatBox', () => {
-  return function ChatBox({ currentUser, isAdmin }) {
+  return function ChatBox({ currentUser, isAdmin, messageRef }) {
     return (
       <div data-testid="chat-box">
+        <input data-testid="chat-input" ref={messageRef} />
         ChatBox - User: {currentUser}, Admin: {isAdmin.toString()}
       </div>
     );
@@ -247,6 +248,27 @@ describe('Participant Component', () => {
         expect(screen.getByRole('button')).toBeInTheDocument();
       });
     });
+
+    it('should blur the message input when a new confederate is assigned', async () => {
+      let confederateHandler;
+      mockOnNewConfederate.mockImplementation((handler) => { confederateHandler = handler; });
+
+      renderWithProviders(<Participant />);
+
+      const nameInput = screen.getByPlaceholderText('Your Name');
+      await userEvent.type(nameInput, 'Test User');
+      await userEvent.click(screen.getByRole('button'));
+
+      await waitFor(() => expect(screen.getByTestId('chat-input')).toBeInTheDocument());
+
+      const chatInput = screen.getByTestId('chat-input');
+      chatInput.focus();
+      expect(document.activeElement).toBe(chatInput);
+
+      act(() => { confederateHandler('Alice'); });
+
+      expect(document.activeElement).not.toBe(chatInput);
+    });
   });
 
   describe('Ready Button', () => {
@@ -337,6 +359,28 @@ describe('Participant Component', () => {
       await waitFor(() => {
         expect(screen.getByTestId('modal')).toBeInTheDocument();
       });
+    });
+
+    it('should blur the message input when the end modal is shown', async () => {
+      let endModalHandler;
+      mockOnShowEndModal.mockImplementation((handler) => { endModalHandler = handler; });
+
+      renderWithProviders(<Participant />);
+
+      const nameInput = screen.getByPlaceholderText('Your Name');
+      await userEvent.type(nameInput, 'Test User');
+      await userEvent.click(screen.getByRole('button'));
+
+      await waitFor(() => expect(screen.getByTestId('chat-input')).toBeInTheDocument());
+
+      const chatInput = screen.getByTestId('chat-input');
+      chatInput.focus();
+      expect(document.activeElement).toBe(chatInput);
+
+      act(() => { endModalHandler(); });
+
+      expect(document.activeElement).not.toBe(chatInput);
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
     });
   });
 
