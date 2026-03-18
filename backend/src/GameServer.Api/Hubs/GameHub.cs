@@ -131,7 +131,20 @@ public class GameHub : Hub
     /// </summary>
     public async Task UpdateProblemSelection(ProblemSelectionDto selection)
     {
+        if (selection.ProblemIndex != 0)
+        {
+            await _telemetryRepository.SaveAsync(new TelemetryEvent
+            {
+                User = _gameService.State.ParticipantName ?? "Unknown",
+                Confederate = _gameService.State.ConfederateName,
+                Action = TelemetryAction.StartingProblemOverride,
+                Text = selection.ProblemIndex.ToString(),
+                Timestamp = DateTime.UtcNow
+            });
+        }
+
         _gameService.SetProblemSelection(selection.BlockIndex, selection.ProblemIndex);
+
         var (block, problem) = await _gameService.GetCurrentProblem();
         await BroadcastProblemUpdate(block, problem);
     }

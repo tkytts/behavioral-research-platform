@@ -141,13 +141,14 @@ jest.mock('../../components/ExperimenterNotes', () => {
 
 jest.mock('../../components/GameConfigModal', () => {
   const React = require('react');
-  return function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, confederatesMaleStart, initialGender, initialConfederateName }) {
+  return function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, confederatesMaleStart, initialGender, initialConfederateName, maxProblemsPerBlock = 5 }) {
     const [gender, setGender] = React.useState('F');
     const [pts, setPts] = React.useState(7);
     const [mt, setMt] = React.useState(75);
     const [mr, setMr] = React.useState(true);
     const [ms, setMs] = React.useState(true);
     const [tmr, setTmr] = React.useState(true);
+    const [startProblem, setStartProblem] = React.useState(0);
 
     if (!isOpen) return null;
 
@@ -173,7 +174,14 @@ jest.mock('../../components/GameConfigModal', () => {
         <input type="checkbox" checked={mr} onChange={e => setMr(e.target.checked)} />
         <input type="checkbox" checked={ms} onChange={e => setMs(e.target.checked)} />
         <input type="checkbox" checked={tmr} onChange={e => setTmr(e.target.checked)} />
-        <button onClick={() => onSave({ confederateName, gender, pointsAwarded: pts, maxTimeInput: mt, chimes: { messageSent: ms, messageReceived: mr, timer: tmr } })}>start</button>
+        <select
+          data-testid="starting-problem-select"
+          value={startProblem}
+          onChange={e => setStartProblem(Number(e.target.value))}
+        >
+          {Array.from({ length: maxProblemsPerBlock }, (_, i) => i).map(i => <option key={i} value={i}>{i+1}</option>)}
+        </select>
+        <button onClick={() => onSave({ confederateName, gender, pointsAwarded: pts, maxTimeInput: mt, chimes: { messageSent: ms, messageReceived: mr, timer: tmr }, startingProblemIndex: startProblem })}>start</button>
         <button onClick={onClose}>cancel</button>
       </div>
     );
@@ -391,7 +399,7 @@ describe('Experimenter Component', () => {
       await userEvent.click(startButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('combobox')).toBeInTheDocument();
+        expect(screen.getAllByRole('combobox')[0]).toBeInTheDocument();
       });
     });
 
@@ -471,6 +479,31 @@ describe('Experimenter Component', () => {
       await waitFor(() => {
         expect(mockFunctions.startGame).toHaveBeenCalled();
       }, { timeout: 3000 });
+    });
+
+    it('calls updateProblemSelection with problemIndex 0 by default', async () => {
+      renderWithProviders(<Experimenter />);
+      await userEvent.click(screen.getAllByRole('button')[0]);
+      await waitFor(() => expect(screen.getByText(/game_configuration/i)).toBeInTheDocument());
+      await userEvent.click(screen.getByText('start'));
+      await waitFor(() => {
+        expect(mockFunctions.updateProblemSelection).toHaveBeenCalledWith(
+          expect.objectContaining({ problemIndex: 0 })
+        );
+      });
+    });
+
+    it('calls updateProblemSelection with selected problemIndex when restarting from mid-block', async () => {
+      renderWithProviders(<Experimenter />);
+      await userEvent.click(screen.getAllByRole('button')[0]);
+      await waitFor(() => expect(screen.getByText(/game_configuration/i)).toBeInTheDocument());
+      await userEvent.selectOptions(screen.getByTestId('starting-problem-select'), '3'); // selects displayed option "3" (problem number), which has value 2 (0-based index)
+      await userEvent.click(screen.getByText('start'));
+      await waitFor(() => {
+        expect(mockFunctions.updateProblemSelection).toHaveBeenCalledWith(
+          expect.objectContaining({ problemIndex: 2 })
+        );
+      });
     });
   });
 

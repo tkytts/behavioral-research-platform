@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import Modal from "./Modal";
 
-function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, confederatesMaleStart, initialConfederateName, initialGender }) {
+function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, confederatesMaleStart, initialConfederateName, initialGender, maxProblemsPerBlock = 5 }) {
   const [gender, setGender] = useState(initialGender || "F");
   const [confederateName, setConfederateName] = useState(initialConfederateName || "");
   const [pointsAwarded, setPointsAwarded] = useState(7);
@@ -10,6 +10,7 @@ function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, con
   const [enableMessageSentChimes, setEnableMessageSentChimes] = useState(true);
   const [enableMessageReceivedChimes, setEnableMessageReceivedChimes] = useState(true);
   const [enableTimerChimes, setEnableTimerChimes] = useState(true);
+  const [startingProblemIndex, setStartingProblemIndex] = useState(0);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -18,6 +19,7 @@ function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, con
     setGender(g);
     const pool = g === "F" ? confederatesFemaleStart : confederatesMaleStart;
     setConfederateName(initialConfederateName || pool?.[0]?.name || "");
+    setStartingProblemIndex(0);
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isOpen) return null;
@@ -48,6 +50,7 @@ function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, con
         messageReceived: enableMessageReceivedChimes,
         timer: enableTimerChimes,
       },
+      startingProblemIndex,
     });
   };
 
@@ -150,6 +153,18 @@ function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, con
             {t("timer")}
           </label>
         </div>
+      </label>
+      <label className="d-block mb-3">
+        {t("starting_problem")}:
+        <select
+          className="form-control mt-2"
+          value={startingProblemIndex}
+          onChange={(e) => setStartingProblemIndex(Number(e.target.value))}
+        >
+          {Array.from({ length: maxProblemsPerBlock }, (_, i) => i).map((i) => (
+            <option key={i} value={i}>{i + 1}</option>
+          ))}
+        </select>
       </label>
       <div className="d-flex justify-content-between">
         <button className="btn btn-success" onClick={handleSave}>

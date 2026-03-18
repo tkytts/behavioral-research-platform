@@ -365,4 +365,23 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
         gameService.State.ConfederateName.Should().BeNull();
         receivedConfederate.Should().Be(string.Empty);
     }
+
+    [Fact]
+    public async Task UpdateProblemSelection_SavesStartingProblemOverrideTelemetry_WhenProblemIndexIsNonZero()
+    {
+        // Arrange
+        await _connection!.InvokeAsync("SetParticipantName", "OverrideUser");
+
+        // Act
+        await _connection.InvokeAsync("UpdateProblemSelection", new ProblemSelectionDto(0, 2));
+        await Task.Delay(100);
+
+        // Assert
+        var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
+        var files = Directory.GetFiles(settings.LogPath, "*.csv", SearchOption.AllDirectories);
+        var allContent = await Task.WhenAll(files.Select(f => File.ReadAllTextAsync(f)));
+        var combined = string.Concat(allContent);
+        combined.Should().Contain(TelemetryAction.StartingProblemOverride);
+        combined.Should().Contain(",2,");
+    }
 }

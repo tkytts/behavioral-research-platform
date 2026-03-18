@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import GameConfigModal from '../GameConfigModal';
 import { renderWithProviders } from '../../test-utils/test-utils';
@@ -83,6 +83,52 @@ describe('GameConfigModal', () => {
     const maleRadio = radios.find(r => r.value === 'M');
     await userEvent.click(maleRadio);
     expect(maleRadio).toBeChecked();
-    expect(screen.getByRole('combobox')).toHaveValue('David');
+    expect(screen.getAllByRole('combobox')[0]).toHaveValue('David');
+  });
+
+  it('shows starting problem dropdown with options 1–5', () => {
+    renderWithProviders(<GameConfigModal {...defaultProps} />);
+    const selects = screen.getAllByRole('combobox');
+    const problemSelect = selects[selects.length - 1];
+    const options = within(problemSelect).getAllByRole('option');
+    expect(options).toHaveLength(5);
+    expect(options[0]).toHaveTextContent('1');
+    expect(options[4]).toHaveTextContent('5');
+  });
+
+  it('defaults starting problem to the first (index 0)', () => {
+    renderWithProviders(<GameConfigModal {...defaultProps} />);
+    const selects = screen.getAllByRole('combobox');
+    expect(selects[selects.length - 1]).toHaveValue('0');
+  });
+
+  it('includes startingProblemIndex: 0 in onSave payload by default', async () => {
+    renderWithProviders(<GameConfigModal {...defaultProps} />);
+    await userEvent.click(screen.getByText('start'));
+    expect(defaultProps.onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ startingProblemIndex: 0 })
+    );
+  });
+
+  it('includes selected startingProblemIndex in onSave payload', async () => {
+    renderWithProviders(<GameConfigModal {...defaultProps} />);
+    const selects = screen.getAllByRole('combobox');
+    await userEvent.selectOptions(selects[selects.length - 1], '3'); // selects displayed option "3" (problem number), which has value 2 (0-based index)
+    await userEvent.click(screen.getByText('start'));
+    expect(defaultProps.onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ startingProblemIndex: 2 })
+    );
+  });
+
+  it('resets startingProblemIndex to 0 when modal is reopened', async () => {
+    const { rerender } = renderWithProviders(<GameConfigModal {...defaultProps} />);
+    const selects = screen.getAllByRole('combobox');
+    await userEvent.selectOptions(selects[selects.length - 1], '3');
+
+    rerender(<GameConfigModal {...defaultProps} isOpen={false} />);
+    rerender(<GameConfigModal {...defaultProps} isOpen={true} />);
+
+    const updatedSelects = screen.getAllByRole('combobox');
+    expect(updatedSelects[updatedSelects.length - 1]).toHaveValue('0');
   });
 });

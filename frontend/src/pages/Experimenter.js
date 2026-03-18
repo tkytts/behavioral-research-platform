@@ -170,7 +170,7 @@ function Experimenter() {
   const closeResolutionModal = () => setShowResolutionModal(false);
   const handleResolved = (type) => setLastResolution({ type, timestamp: Date.now() });
 
-  const handleSave = ({ confederateName: newName, gender: newGender, pointsAwarded, maxTimeInput, chimes }) => {
+  const handleSave = ({ confederateName: newName, gender: newGender, pointsAwarded, maxTimeInput, chimes, startingProblemIndex }) => {
     setConfederateName(newName);
     setGender(newGender);
     fetchCurrentUser();
@@ -178,7 +178,7 @@ function Experimenter() {
     const list = newGender === "F" ? confederatesFemaleStart : confederatesMaleStart;
     const confederateBlock = list.findIndex((c) => c.name === newName);
 
-    setCurrentProblem(0);
+    setCurrentProblem(startingProblemIndex);
 
     // stopTimer + setMaxTime before setConfederate so the participant cannot
     // click Ready before the new timer configuration is in place on the backend
@@ -190,7 +190,7 @@ function Experimenter() {
     setChimes(chimes);
     updateProblemSelection({
       blockIndex: confederateBlock,
-      problemIndex: 0
+      problemIndex: startingProblemIndex
     });
     clearChat();
 
@@ -215,6 +215,9 @@ function Experimenter() {
 
   const confederates = gender === "F" ? confederatesFemaleStart : confederatesMaleStart;
   const currentConfederateIndex = confederates.findIndex((c) => c.name === confederateName);
+  // Note: if startingProblemIndex is MAX_PROBLEMS_PER_BLOCK - 1 and this is the last block,
+  // this will be true immediately after handleSave, so the Next Problem button will not render.
+  // This is intentional — the experimenter can still run the problem and end the session.
   const isLastProblemOfLastBlock =
     currentProblem === MAX_PROBLEMS_PER_BLOCK - 1 &&
     currentConfederateIndex === confederates.length - 1;
@@ -296,6 +299,7 @@ function Experimenter() {
         confederatesMaleStart={confederatesMaleStart}
         initialConfederateName={confederateName}
         initialGender={gender}
+        maxProblemsPerBlock={MAX_PROBLEMS_PER_BLOCK}
       />
 
       <ResolutionModal isOpen={showResolutionModal} onClose={closeResolutionModal} onResolved={handleResolved} />
