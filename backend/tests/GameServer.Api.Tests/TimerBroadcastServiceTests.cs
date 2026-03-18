@@ -49,48 +49,28 @@ public class TimerBroadcastServiceTests
     }
 
     [Fact]
-    public async Task OnTimeout_SavesTelemetryWithGameResolvedAction()
+    public async Task OnTimeout_SavesTelemetryEvent_WithAction_Answer_And_ResolutionType()
     {
         // Arrange
+        var tcs = new TaskCompletionSource<TelemetryEvent>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _telemetryRepository.SaveAsync(Arg.Any<TelemetryEvent>())
+            .Returns(ci => { tcs.TrySetResult(ci.Arg<TelemetryEvent>()); return Task.CompletedTask; });
+        // Reference discarded intentionally — the lambda registered via OnTimeout+= is what
+        // survives (held by NSubstitute's event list); the service instance itself is not
+        // rooted and can be collected, but the lambda fires synchronously before any GC opportunity.
         _ = new TimerBroadcastService(_timerService, _gameService, _telemetryRepository, _hubContext);
 
         // Act
         _timerService.OnTimeout += Raise.Event<Action>();
-        await Task.Delay(100);
 
         // Assert
-        await _telemetryRepository.Received(1).SaveAsync(Arg.Is<TelemetryEvent>(e =>
-            e.Action == TelemetryAction.GameResolved));
-    }
-
-    [Fact]
-    public async Task OnTimeout_IncludesTeamAnswerInTelemetry()
-    {
-        // Arrange
-        _ = new TimerBroadcastService(_timerService, _gameService, _telemetryRepository, _hubContext);
-
-        // Act
-        _timerService.OnTimeout += Raise.Event<Action>();
-        await Task.Delay(100);
-
-        // Assert
-        await _telemetryRepository.Received(1).SaveAsync(Arg.Is<TelemetryEvent>(e =>
-            e.Answer == "42"));
-    }
-
-    [Fact]
-    public async Task OnTimeout_IncludesResolutionTypeInTelemetry()
-    {
-        // Arrange
-        _ = new TimerBroadcastService(_timerService, _gameService, _telemetryRepository, _hubContext);
-
-        // Act
-        _timerService.OnTimeout += Raise.Event<Action>();
-        await Task.Delay(100);
-
-        // Assert
-        await _telemetryRepository.Received(1).SaveAsync(Arg.Is<TelemetryEvent>(e =>
-            e.Resolution == "AP"));
+        var evt = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        using (new FluentAssertions.Execution.AssertionScope())
+        {
+            evt.Action.Should().Be(TelemetryAction.GameResolved);
+            evt.Answer.Should().Be("42");
+            evt.Resolution.Should().Be("AP");
+        }
     }
 
     [Fact]
@@ -98,14 +78,19 @@ public class TimerBroadcastServiceTests
     {
         // Arrange
         _gameService.State.TeamAnswer = null;
+        var tcs = new TaskCompletionSource<TelemetryEvent>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _telemetryRepository.SaveAsync(Arg.Any<TelemetryEvent>())
+            .Returns(ci => { tcs.TrySetResult(ci.Arg<TelemetryEvent>()); return Task.CompletedTask; });
+        // Reference discarded intentionally — the lambda registered via OnTimeout+= is what
+        // survives (held by NSubstitute's event list); the service instance itself is not
+        // rooted and can be collected, but the lambda fires synchronously before any GC opportunity.
         _ = new TimerBroadcastService(_timerService, _gameService, _telemetryRepository, _hubContext);
 
         // Act
         _timerService.OnTimeout += Raise.Event<Action>();
-        await Task.Delay(100);
 
         // Assert
-        await _telemetryRepository.Received(1).SaveAsync(Arg.Is<TelemetryEvent>(e =>
-            e.Answer == null));
+        var evt = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        evt.Answer.Should().BeNull();
     }
 }

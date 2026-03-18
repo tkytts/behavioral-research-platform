@@ -35,10 +35,45 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
 
     public async Task DisposeAsync()
     {
-        if (_connection is not null)
+        try
         {
-            await _connection.DisposeAsync();
+            if (_connection is not null)
+                await _connection.DisposeAsync();
         }
+        finally
+        {
+            var gameService = _factory.Services.GetRequiredService<IGameService>();
+            gameService.State.Reset();
+
+            var sessionContext = _factory.Services.GetRequiredService<ISessionContext>();
+            sessionContext.IsTutorial = false;
+            sessionContext.SessionFolder = null;
+        }
+    }
+
+    // Registers a handler before invoking an action and awaits the first matching event.
+    // WARNING: HubConnection.On<T> appends a new handler on each call — it does not overwrite.
+    // Call this at most once per event name per connection instance. Handlers are never
+    // deregistered, so a second call for the same event name will cause the stale handler
+    // from the first call to fire the new TCS.
+    private static async Task<T> WaitForEventAsync<T>(HubConnection conn, string eventName,
+        Func<Task> action, TimeSpan? timeout = null)
+    {
+        var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+        conn.On<T>(eventName, val => tcs.TrySetResult(val));
+        try { await action(); }
+        catch (Exception ex) { tcs.TrySetException(ex); }
+        return await tcs.Task.WaitAsync(timeout ?? TimeSpan.FromSeconds(5));
+    }
+
+    // Polls condition every 20 ms until it returns true or the timeout elapses.
+    private static async Task PollUntilAsync(Func<bool> condition, TimeSpan? timeout = null, string? reason = null)
+    {
+        var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(5));
+        bool result;
+        while (!(result = condition()) && DateTime.UtcNow < deadline)
+            await Task.Delay(20);
+        result.Should().BeTrue(reason ?? "condition did not become true within the timeout");
     }
 
     [Fact]
@@ -51,95 +86,60 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
     [Fact]
     public async Task SendMessage_BroadcastsToAll()
     {
-        // Arrange
-        ChatMessageDto? receivedMessage = null;
-        _connection!.On<ChatMessageDto>("ReceiveMessage", msg => receivedMessage = msg);
+        // Act & Assert
+        var msg = await WaitForEventAsync<ChatMessageDto>(_connection!, "ReceiveMessage",
+            () => _connection!.InvokeAsync("SendMessage", new ChatMessageDto("TestUser", "Hello!")));
 
-        // Act
-        await _connection.InvokeAsync("SendMessage", new ChatMessageDto("TestUser", "Hello!"));
-        await Task.Delay(100); // Allow time for message to arrive
-
-        // Assert
-        receivedMessage.Should().NotBeNull();
-        receivedMessage!.User.Should().Be("TestUser");
-        receivedMessage.Text.Should().Be("Hello!");
+        msg.Should().NotBeNull();
+        msg.User.Should().Be("TestUser");
+        msg.Text.Should().Be("Hello!");
     }
 
     [Fact]
     public async Task StartGame_BroadcastsStatusUpdate()
     {
-        // Arrange
-        bool? gameStatus = null;
-        _connection!.On<bool>("StatusUpdate", status => gameStatus = status);
+        var status = await WaitForEventAsync<bool>(_connection!, "StatusUpdate",
+            () => _connection!.InvokeAsync("StartGame"));
 
-        // Act
-        await _connection.InvokeAsync("StartGame");
-        await Task.Delay(100);
-
-        // Assert
-        gameStatus.Should().BeTrue();
+        status.Should().BeTrue();
     }
 
     [Fact]
     public async Task StopGame_BroadcastsStatusUpdate()
     {
-        // Arrange
-        bool? gameStatus = null;
-        _connection!.On<bool>("StatusUpdate", status => gameStatus = status);
+        var status = await WaitForEventAsync<bool>(_connection!, "StatusUpdate",
+            () => _connection!.InvokeAsync("StopGame"));
 
-        // Act
-        await _connection.InvokeAsync("StopGame");
-        await Task.Delay(100);
-
-        // Assert
-        gameStatus.Should().BeFalse();
+        status.Should().BeFalse();
     }
 
     [Fact]
     public async Task ResetPoints_BroadcastsZeroScore()
     {
-        // Arrange
-        int? score = null;
-        _connection!.On<int>("PointsUpdate", s => score = s);
+        var score = await WaitForEventAsync<int>(_connection!, "PointsUpdate",
+            () => _connection!.InvokeAsync("ResetPoints"));
 
-        // Act
-        await _connection.InvokeAsync("ResetPoints");
-        await Task.Delay(100);
-
-        // Assert
         score.Should().Be(0);
     }
 
     [Fact]
     public async Task SetConfederate_BroadcastsNewConfederate()
     {
-        // Arrange
-        string? confederate = null;
-        _connection!.On<string>("NewConfederate", name => confederate = name);
+        var confederate = await WaitForEventAsync<string>(_connection!, "NewConfederate",
+            () => _connection!.InvokeAsync("SetConfederate", "TestConfederate"));
 
-        // Act
-        await _connection.InvokeAsync("SetConfederate", "TestConfederate");
-        await Task.Delay(100);
-
-        // Assert
         confederate.Should().Be("TestConfederate");
     }
 
     [Fact]
     public async Task BlockFinished_BroadcastsNewConfederate_WithInterrupts()
     {
-        // Arrange
-        string? receivedConfederate = null;
-        _connection!.On<string>("NewConfederate", name => receivedConfederate = name);
-
-        await _connection.InvokeAsync("TelemetryEvent", new TelemetryEventDto("TestUser", null, TelemetryAction.Interrupt, null));
+        await _connection!.InvokeAsync("TelemetryEvent", new TelemetryEventDto("TestUser", null, TelemetryAction.Interrupt, null));
         await _connection.InvokeAsync("TelemetryEvent", new TelemetryEventDto("TestUser", null, TelemetryAction.Interrupt, null));
 
-        // Act
-        await _connection.InvokeAsync("BlockFinished");
-        await Task.Delay(100);
+        var receivedConfederate = await WaitForEventAsync<string>(_connection!, "NewConfederate",
+            () => _connection!.InvokeAsync("BlockFinished"));
 
-        // Assert
         receivedConfederate.Should().Be(string.Empty);
     }
 
@@ -155,49 +155,43 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
 
         // Act
         await _connection.InvokeAsync("BlockFinished");
-        await Task.Delay(100);
 
         // Assert
         var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
-        var files = Directory.GetFiles(settings.LogPath, "*.csv");
-        var allContent = await Task.WhenAll(files.Select(f => File.ReadAllTextAsync(f)));
-        var combined = string.Concat(allContent);
-        combined.Should().Contain(TelemetryAction.BlockInterrupts);
-        combined.Should().Contain(",3,");
+        await PollUntilAsync(() =>
+        {
+            var files = Directory.GetFiles(settings.LogPath, "*.csv");
+            var combined = string.Concat(files.Select(f => File.ReadAllText(f)));
+            return combined.Contains(TelemetryAction.BlockInterrupts) && combined.Contains(",3,");
+        }, reason: "telemetry file with BlockInterrupts and count 3 was not written");
     }
 
     [Fact]
     public async Task SetAnswer_BroadcastsAnswerToClients()
     {
-        // Arrange
-        string? receivedAnswer = null;
-        _connection!.On<string>("SetAnswer", answer => receivedAnswer = answer);
+        var answer = await WaitForEventAsync<string>(_connection!, "SetAnswer",
+            () => _connection!.InvokeAsync("SetAnswer", "42"));
 
-        // Act
-        await _connection.InvokeAsync("SetAnswer", "42");
-        await Task.Delay(100);
-
-        // Assert
-        receivedAnswer.Should().Be("42");
+        answer.Should().Be("42");
     }
 
     [Fact]
-    public async Task SetAnswer_SavesTeamAnswerSetTelemetry()
+    public async Task SetGameResolution_SavesTeamAnswerSetTelemetry()
     {
         // Arrange
         await _connection!.InvokeAsync("SetParticipantName", "IntegrationUser");
 
         // Act
-        await _connection.InvokeAsync("SetAnswer", "42");
-        await Task.Delay(100);
+        await _connection.InvokeAsync("SetGameResolution", new SetGameResolutionDto("AP", "42"));
 
         // Assert
         var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
-        var files = Directory.GetFiles(settings.LogPath, "*.csv");
-        var allContent = await Task.WhenAll(files.Select(f => File.ReadAllTextAsync(f)));
-        var combined = string.Concat(allContent);
-        combined.Should().Contain(TelemetryAction.TeamAnswerSet);
-        combined.Should().Contain(",,42");
+        await PollUntilAsync(() =>
+        {
+            var files = Directory.GetFiles(settings.LogPath, "*.csv", SearchOption.AllDirectories);
+            var combined = string.Concat(files.Select(f => File.ReadAllText(f)));
+            return combined.Contains(TelemetryAction.TeamAnswerSet) && combined.Contains(",,42");
+        }, reason: "telemetry file with TeamAnswerSet was not written");
     }
 
     [Fact]
@@ -208,14 +202,14 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
 
         // Act
         await _connection.InvokeAsync("TelemetryEvent", new TelemetryEventDto("Alice", null, TelemetryAction.Edit, null));
-        await Task.Delay(100);
 
         // Assert
         var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
-        var subfolders = Directory.GetDirectories(settings.LogPath, "Alice_*");
-        subfolders.Should().NotBeEmpty();
-        var files = Directory.GetFiles(subfolders[0], "*.csv");
-        files.Should().NotBeEmpty();
+        await PollUntilAsync(() =>
+        {
+            var subfolders = Directory.GetDirectories(settings.LogPath, "Alice_*");
+            return subfolders.Length > 0 && Directory.GetFiles(subfolders[0], "*.csv").Length > 0;
+        }, reason: "session subfolder was not created");
     }
 
     [Fact]
@@ -230,14 +224,10 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
             .Build();
         await connection2.StartAsync();
 
-        string? typingUser = null;
-        connection2.On<string>("UserTyping", username => typingUser = username);
+        // Act & Assert
+        var typingUser = await WaitForEventAsync<string>(connection2, "UserTyping",
+            () => _connection!.InvokeAsync("Typing", "User1"));
 
-        // Act
-        await _connection!.InvokeAsync("Typing", "User1");
-        await Task.Delay(100);
-
-        // Assert
         typingUser.Should().Be("User1");
 
         // Cleanup
@@ -249,16 +239,14 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
     {
         // Arrange: start the timer so it is running
         await _connection!.InvokeAsync("StartTimer");
-        await Task.Delay(100);
         var timerService = _factory.Services.GetRequiredService<ITimerService>();
-        timerService.IsRunning.Should().BeTrue();
+        await PollUntilAsync(() => timerService.IsRunning, reason: "timer did not start");
 
         // Act
         await _connection.InvokeAsync("BlockFinished");
-        await Task.Delay(100);
 
         // Assert: timer must be stopped after block ends
-        timerService.IsRunning.Should().BeFalse();
+        await PollUntilAsync(() => !timerService.IsRunning, reason: "timer did not stop after BlockFinished");
     }
 
     [Fact]
@@ -268,13 +256,12 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
         var gameService = _factory.Services.GetRequiredService<IGameService>();
         await _connection!.InvokeAsync("SetGameResolution",
             new SetGameResolutionDto("AP", "someAnswer"));
-        await Task.Delay(100);
+        // InvokeAsync completes only after the hub method returns, so state is fully written — no polling needed.
         gameService.State.PendingResolutionType.Should().NotBeNull();
         gameService.State.TeamAnswer.Should().Be("someAnswer");
 
         // Act
         await _connection.InvokeAsync("BlockFinished");
-        await Task.Delay(100);
 
         // Assert: stale resolution state must be wiped before next block
         gameService.State.PendingResolutionType.Should().BeNull();
@@ -290,7 +277,6 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
 
         // Act
         await _connection!.InvokeAsync("BlockFinished");
-        await Task.Delay(100);
 
         // Assert: polling endpoint must return "" during inter-block interval
         gameService.State.ConfederateName.Should().BeNull();
@@ -301,7 +287,6 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
     {
         // Act
         await _connection!.InvokeAsync("StartTutorial");
-        await Task.Delay(100);
 
         // Assert
         var sessionContext = _factory.Services.GetRequiredService<ISessionContext>();
@@ -313,13 +298,11 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
     {
         // Arrange: mark session as tutorial first
         await _connection!.InvokeAsync("StartTutorial");
-        await Task.Delay(100);
         var sessionContext = _factory.Services.GetRequiredService<ISessionContext>();
         sessionContext.IsTutorial.Should().BeTrue();
 
         // Act
         await _connection.InvokeAsync("StartGame");
-        await Task.Delay(100);
 
         // Assert
         sessionContext.IsTutorial.Should().BeFalse();
@@ -331,12 +314,14 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
         // Arrange
         await _connection!.InvokeAsync("SetParticipantName", "TutorialUser");
         await _connection.InvokeAsync("StartTutorial");
-        await Task.Delay(100);
 
         // Act
         await _connection.InvokeAsync("TelemetryEvent",
             new TelemetryEventDto("TutorialUser", null, TelemetryAction.Edit, null));
-        await Task.Delay(100);
+
+        // Absence assertion: wait briefly to confirm no file was written.
+        // Cannot use PollUntilAsync because the condition is never expected to become true.
+        await Task.Delay(500);
 
         // Assert: no CSV file should be written during tutorial
         var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
@@ -354,14 +339,10 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
         var gameService = _factory.Services.GetRequiredService<IGameService>();
         gameService.State.ConfederateName = "Julio";
 
-        string? receivedConfederate = null;
-        _connection!.On<string>("NewConfederate", name => receivedConfederate = name);
+        // Act & Assert
+        var receivedConfederate = await WaitForEventAsync<string>(_connection!, "NewConfederate",
+            () => _connection!.InvokeAsync("TutorialDone", 1));
 
-        // Act
-        await _connection.InvokeAsync("TutorialDone", 1);
-        await Task.Delay(100);
-
-        // Assert: state is cleared and clients are notified
         gameService.State.ConfederateName.Should().BeNull();
         receivedConfederate.Should().Be(string.Empty);
     }
@@ -374,14 +355,74 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
 
         // Act
         await _connection.InvokeAsync("UpdateProblemSelection", new ProblemSelectionDto(0, 2));
-        await Task.Delay(100);
 
         // Assert
         var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
-        var files = Directory.GetFiles(settings.LogPath, "*.csv", SearchOption.AllDirectories);
-        var allContent = await Task.WhenAll(files.Select(f => File.ReadAllTextAsync(f)));
-        var combined = string.Concat(allContent);
-        combined.Should().Contain(TelemetryAction.StartingProblemOverride);
-        combined.Should().Contain(",2,");
+        await PollUntilAsync(() =>
+        {
+            var files = Directory.GetFiles(settings.LogPath, "*.csv", SearchOption.AllDirectories);
+            var combined = string.Concat(files.Select(f => File.ReadAllText(f)));
+            return combined.Contains(TelemetryAction.StartingProblemOverride) && combined.Contains(",2,");
+        }, reason: "telemetry file with StartingProblemOverride was not written");
+    }
+
+    // ── Negative tests ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task StartGame_WithNoParticipantNameSet_WritesTelemetryWithUnknownUser()
+    {
+        // Arrange: clear participant name to simulate a game started before a participant connects
+        var gameService = _factory.Services.GetRequiredService<IGameService>();
+        gameService.State.ParticipantName = null;
+
+        // Act
+        await _connection!.InvokeAsync("StartGame");
+
+        // Assert: telemetry should fall back to "Unknown" when no participant name is set
+        var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
+        await PollUntilAsync(() =>
+        {
+            var files = Directory.GetFiles(settings.LogPath, "*.csv", SearchOption.AllDirectories);
+            var combined = string.Concat(files.Select(f => File.ReadAllText(f)));
+            var lines = combined.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            return lines.Any(line => line.StartsWith("Unknown,") && line.Contains(TelemetryAction.NewGame));
+        }, reason: "telemetry file with NewGame and Unknown user was not written");
+    }
+
+    [Fact]
+    public async Task SetGameResolution_WithInvalidResolutionType_DoesNotBroadcastSetAnswer()
+    {
+        // Arrange
+        var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _connection!.On<string>("SetAnswer", val => tcs.TrySetResult(val));
+
+        // Act
+        await _connection.InvokeAsync("SetGameResolution", new SetGameResolutionDto("INVALID_TYPE", "some answer"));
+
+        // Absence assertion: xUnit runs tests within a class sequentially by default,
+        // so no in-class test can fire a concurrent broadcast. The 500 ms wait is a
+        // pragmatic upper bound — there is no signal-based alternative for "event never fires".
+        // If [Collection] or parallel test execution is ever added, revisit this test.
+        var fired = await Task.WhenAny(tcs.Task, Task.Delay(500)) == tcs.Task;
+        fired.Should().BeFalse("invalid resolution type should not trigger a SetAnswer broadcast");
+    }
+
+    [Fact]
+    public async Task SetParticipantName_WithEmptyString_IsNoOp()
+    {
+        // Arrange: set a known name first so the guard can be verified
+        await _connection!.InvokeAsync("SetParticipantName", "Alice");
+        var gameService = _factory.Services.GetRequiredService<IGameService>();
+        var sessionContext = _factory.Services.GetRequiredService<ISessionContext>();
+        gameService.State.ParticipantName.Should().Be("Alice");
+        sessionContext.SessionFolder.Should().NotBeNull();
+
+        // Act: calling with empty string should be a no-op
+        await _connection.InvokeAsync("SetParticipantName", string.Empty);
+
+        // Assert: connection remains open, state is unchanged
+        _connection.State.Should().Be(HubConnectionState.Connected);
+        gameService.State.ParticipantName.Should().Be("Alice");
+        sessionContext.SessionFolder.Should().NotBeNull();
     }
 }

@@ -128,6 +128,59 @@ public class GameServiceTests
         problem!.Should().Be("p4");
     }
 
+    [Fact]
+    public async Task NextBlock_WhenAlreadyPastLastBlock_ReturnsNullTuple()
+    {
+        // Arrange: navigate to last block (index 1)
+        await _sut.FirstBlock();
+        await _sut.NextBlock();
+
+        // Act: go beyond last block
+        var (block, problem) = await _sut.NextBlock();
+
+        // Assert
+        block.Should().BeNull();
+        problem.Should().BeNull();
+        _state.CurrentBlockIndex.Should().Be(2); // Known design choice: index is not capped at the last block. If capping is added, update this assertion.
+    }
+
+    [Fact]
+    public async Task GetCurrentProblem_WhenBlockIndexOutOfBounds_ReturnsNullTuple()
+    {
+        // Arrange
+        _sut.SetProblemSelection(99, 0);
+
+        // Act
+        var (block, problem) = await _sut.GetCurrentProblem();
+
+        // Assert
+        block.Should().BeNull();
+        problem.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetCurrentProblem_WhenProblemIndexOutOfBounds_ReturnsBlockButNullProblem()
+    {
+        // Arrange
+        _sut.SetProblemSelection(0, 99);
+
+        // Act
+        var (block, problem) = await _sut.GetCurrentProblem();
+
+        // Assert
+        block.Should().NotBeNull();
+        block!.BlockName.Should().Be("Block 1");
+        problem.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetProblemSelection_WithOutOfBoundsBlockIndex_DoesNotThrow()
+    {
+        // Act & Assert
+        var act = () => _sut.SetProblemSelection(99, 0);
+        act.Should().NotThrow();
+    }
+
     #endregion
 
     #region Game Resolution Tests

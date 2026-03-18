@@ -62,6 +62,9 @@ public class GameHub : Hub
     /// </summary>
     public Task SetParticipantName(string name)
     {
+        if (string.IsNullOrEmpty(name))
+            return Task.CompletedTask;
+
         _logger.LogInformation("Participant connected: {Name}", name);
         _gameService.State.ParticipantName = name;
         _sessionContext.SessionFolder = $"{FilenameHelper.SanitizeForFilename(name)}_{DateTime.UtcNow:dd-MM-yy}";
@@ -352,13 +355,14 @@ public class GameHub : Hub
         _timerService.Stop();
         _gameService.State.PendingResolutionType = null;
         _gameService.State.TeamAnswer = null;
+        var confederateName = _gameService.State.ConfederateName;
         _gameService.State.ConfederateName = null;
 
         var interruptCount = _gameService.State.GetAndResetInterruptCount();
         await _telemetryRepository.SaveAsync(new TelemetryEvent
         {
             User = _gameService.State.ParticipantName ?? "Unknown",
-            Confederate = _gameService.State.ConfederateName,
+            Confederate = confederateName,
             Action = TelemetryAction.BlockInterrupts,
             Text = interruptCount.ToString(),
             Timestamp = DateTime.UtcNow

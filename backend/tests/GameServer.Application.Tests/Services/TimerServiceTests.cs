@@ -90,16 +90,18 @@ public class TimerServiceTests
         // Arrange
         var shortSettings = Options.Create(new GameSettings { MaxTime = 2 });
         var sut = new TimerService(shortSettings);
-        var tickValues = new List<int>();
-        sut.OnTick += (value) => tickValues.Add(value);
+        var tcs = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        sut.OnTick += value => tcs.TrySetResult(value);
 
         // Act
         sut.Start();
-        await Task.Delay(1500); // Wait for at least one tick
-        sut.Stop();
 
         // Assert
-        tickValues.Should().NotBeEmpty();
+        var tick = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        tick.Should().BeInRange(0, 2);
+
+        // Cleanup
+        sut.Stop();
     }
 
     [Fact]
@@ -108,15 +110,14 @@ public class TimerServiceTests
         // Arrange
         var shortSettings = Options.Create(new GameSettings { MaxTime = 1 });
         var sut = new TimerService(shortSettings);
-        var timeoutFired = false;
-        sut.OnTimeout += () => timeoutFired = true;
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        sut.OnTimeout += () => tcs.TrySetResult(true);
 
         // Act
         sut.Start();
-        await Task.Delay(2000); // Wait for timeout
 
         // Assert
-        timeoutFired.Should().BeTrue();
+        await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
         sut.IsRunning.Should().BeFalse();
     }
 

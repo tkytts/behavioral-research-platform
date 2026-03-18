@@ -227,11 +227,14 @@ public class GameState
         lock (_lock)
         {
             _messages = new List<Message>();
+            _participantName = null;
+            _confederateName = null;
             _currentScore = 0;
             _interruptCount = 0;
             _currentBlockIndex = null;
             _currentProblemIndex = null;
             _isLive = false;
+            _chimesConfig = null;
             _pendingResolutionType = null;
             _teamAnswer = null;
         }

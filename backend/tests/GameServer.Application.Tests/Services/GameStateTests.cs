@@ -91,6 +91,24 @@ public class GameStateTests
     }
 
     [Fact]
+    public void Reset_ClearsParticipantNameConfederateNameAndChimesConfig()
+    {
+        // Arrange
+        var state = new GameState();
+        state.ParticipantName = "Alice";
+        state.ConfederateName = "Bob";
+        state.ChimesConfig = new ChimesConfig { MessageSent = true, MessageReceived = false, Timer = true };
+
+        // Act
+        state.Reset();
+
+        // Assert
+        state.ParticipantName.Should().BeNull();
+        state.ConfederateName.Should().BeNull();
+        state.ChimesConfig.Should().BeNull();
+    }
+
+    [Fact]
     public void NewState_InterruptCountIsZero()
     {
         var state = new GameState();
