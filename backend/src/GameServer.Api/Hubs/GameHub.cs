@@ -298,17 +298,20 @@ public class GameHub : Hub
         {
             var answer = data.TeamAnswer;
 
-            await _telemetryRepository.SaveAsync(new TelemetryEvent
+            if (!_gameService.State.MatchesPendingResolution(resolutionType, answer))
             {
-                User = _gameService.State.ParticipantName ?? "Unknown",
-                Confederate = _gameService.State.ConfederateName,
-                Action = TelemetryAction.TeamAnswerSet,
-                Answer = answer,
-                Timestamp = DateTime.UtcNow
-            });
-            _gameService.State.PendingResolutionType = resolutionType;
-            _gameService.State.TeamAnswer = answer;
-            await Clients.All.SendAsync("SetAnswer", data.TeamAnswer ?? string.Empty);
+                await _telemetryRepository.SaveAsync(new TelemetryEvent
+                {
+                    User = _gameService.State.ParticipantName ?? "Unknown",
+                    Confederate = _gameService.State.ConfederateName,
+                    Action = TelemetryAction.TeamAnswerSet,
+                    Answer = answer,
+                    Timestamp = DateTime.UtcNow
+                });
+                _gameService.State.SetPendingResolution(resolutionType, answer);
+            }
+
+            await Clients.All.SendAsync("SetAnswer", answer ?? string.Empty);
         }
     }
 

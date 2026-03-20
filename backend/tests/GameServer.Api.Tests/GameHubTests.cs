@@ -195,6 +195,88 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
     }
 
     [Fact]
+    public async Task SetGameResolution_DuplicateSubmission_DoesNotWriteExtraTelemetry()
+    {
+        // Arrange
+        await _connection!.InvokeAsync("SetParticipantName", "IntegrationUser");
+        var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
+
+        int CountRows(string answer)
+        {
+            var files = Directory.GetFiles(settings.LogPath, "*.csv", SearchOption.AllDirectories);
+            var lines = files.SelectMany(f => File.ReadAllLines(f));
+            return lines.Count(l => l.Contains(TelemetryAction.TeamAnswerSet) && l.Contains($",,{answer}"));
+        }
+
+        // Capture baseline (leftover rows from prior test runs)
+        var baseline = CountRows("42");
+
+        // Act — first submission
+        await _connection.InvokeAsync("SetGameResolution", new SetGameResolutionDto("AP", "42"));
+        await PollUntilAsync(() => CountRows("42") == baseline + 1,
+            reason: "first TeamAnswerSet telemetry row was not written");
+
+        // Act — duplicate submission
+        await _connection.InvokeAsync("SetGameResolution", new SetGameResolutionDto("AP", "42"));
+        // InvokeAsync returns after the hub method completes, so any telemetry write would already
+        // be in-flight. A short delay lets the async repository flush before we assert absence.
+        await Task.Delay(200);
+
+        // Assert — count has not grown beyond baseline + 1
+        CountRows("42").Should().Be(baseline + 1, "duplicate submission must not write a second telemetry row");
+    }
+
+    [Fact]
+    public async Task SetGameResolution_DuplicateSubmission_StillBroadcastsSetAnswer()
+    {
+        // Arrange
+        await _connection!.InvokeAsync("SetParticipantName", "IntegrationUser");
+
+        // First submission — handler intentionally not registered yet so we only capture the
+        // duplicate broadcast below (deviates from WaitForEventAsync's register-then-invoke pattern).
+        await _connection.InvokeAsync("SetGameResolution", new SetGameResolutionDto("AP", "42"));
+
+        // Register handler before the duplicate call
+        var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _connection.On<string>("SetAnswer", val => tcs.TrySetResult(val));
+
+        // Act — duplicate submission
+        await _connection.InvokeAsync("SetGameResolution", new SetGameResolutionDto("AP", "42"));
+
+        // Assert — broadcast still fires
+        var answer = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        answer.Should().Be("42");
+    }
+
+    [Fact]
+    public async Task SetGameResolution_ChangedAnswer_WritesNewTelemetry()
+    {
+        // Arrange
+        await _connection!.InvokeAsync("SetParticipantName", "IntegrationUser");
+        var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
+
+        // First submission
+        await _connection.InvokeAsync("SetGameResolution", new SetGameResolutionDto("AP", "42"));
+        await PollUntilAsync(() =>
+        {
+            var files = Directory.GetFiles(settings.LogPath, "*.csv", SearchOption.AllDirectories);
+            var combined = string.Concat(files.Select(f => File.ReadAllText(f)));
+            return combined.Contains(TelemetryAction.TeamAnswerSet) && combined.Contains(",,42");
+        }, reason: "first TeamAnswerSet telemetry was not written");
+
+        // Act — different answer
+        await _connection.InvokeAsync("SetGameResolution", new SetGameResolutionDto("AP", "99"));
+
+        // Assert — new row appears
+        await PollUntilAsync(() =>
+        {
+            var files = Directory.GetFiles(settings.LogPath, "*.csv", SearchOption.AllDirectories);
+            var combined = string.Concat(files.Select(f => File.ReadAllText(f)));
+            return combined.Contains(TelemetryAction.TeamAnswerSet) && combined.Contains(",,99");
+        }, reason: "second TeamAnswerSet telemetry row for answer '99' was not written");
+    }
+
+    [Fact]
     public async Task SetParticipantName_RoutesSubsequentTelemetryIntoSessionSubfolder()
     {
         // Arrange

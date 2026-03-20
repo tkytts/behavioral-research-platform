@@ -209,6 +209,26 @@ public class GameState
     }
 
     /// <summary>
+    /// Atomically checks whether the pending resolution matches the given values.
+    /// </summary>
+    public bool MatchesPendingResolution(GameResolutionType type, string? answer)
+    {
+        lock (_lock) { return _pendingResolutionType == type && _teamAnswer == answer; }
+    }
+
+    /// <summary>
+    /// Atomically sets both the pending resolution type and team answer.
+    /// </summary>
+    public void SetPendingResolution(GameResolutionType type, string? answer)
+    {
+        lock (_lock)
+        {
+            _pendingResolutionType = type;
+            _teamAnswer = answer;
+        }
+    }
+
+    /// <summary>
     /// Resets the score to zero.
     /// </summary>
     public void ResetScore()
