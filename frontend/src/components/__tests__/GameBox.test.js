@@ -47,6 +47,13 @@ testI18n.use(initReactI18next).init({
         stop_timer: 'Stop Timer',
         reset_timer: 'Reset Timer',
         time_is_up: "Time's up!",
+        '1_second_left': '1 second left',
+        n_seconds_left: '{{count}} seconds left',
+        team_answer_was: 'Team answer was',
+        the_answer_was: 'The answer was',
+        correct: 'correct',
+        incorrect: 'incorrect',
+        you_earned_points: 'You earned {{count}} points',
       },
     },
   },
@@ -182,6 +189,101 @@ describe('GameBox', () => {
     expect(screen.getByRole('button', { name: /start timer/i })).toHaveClass('btn-primary');
     expect(screen.getByRole('button', { name: /stop timer/i })).toHaveClass('btn-danger');
     expect(screen.getByRole('button', { name: /reset timer/i })).toHaveClass('btn-secondary');
+  });
+
+  describe('result display', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.clearAllTimers();
+      jest.useRealTimers();
+    });
+
+    it('result paragraphs are hidden on initial render', () => {
+      renderGameBox();
+
+      expect(screen.getByTestId('result-answer')).toHaveStyle({ visibility: 'hidden' });
+      expect(screen.getByTestId('result-correct')).toHaveStyle({ visibility: 'hidden' });
+      expect(screen.getByTestId('result-points')).toHaveStyle({ visibility: 'hidden' });
+    });
+
+    it('reveals team answer line after 3 seconds', () => {
+      renderGameBox();
+
+      const gameResolvedHandler = gameModule.onGameResolved.mock.calls[0][0];
+      act(() => {
+        gameResolvedHandler({ teamAnswer: 'blue', isAnswerCorrect: true, pointsAwarded: 7, currentScore: 7 });
+      });
+
+      act(() => { jest.advanceTimersByTime(3000); });
+
+      expect(screen.getByTestId('result-answer')).toHaveStyle({ visibility: 'visible' });
+      expect(screen.getByTestId('result-answer')).not.toHaveAttribute('aria-hidden', 'true');
+    });
+
+    it('reveals correct/incorrect line after 6 seconds', () => {
+      renderGameBox();
+
+      const gameResolvedHandler = gameModule.onGameResolved.mock.calls[0][0];
+      act(() => {
+        gameResolvedHandler({ teamAnswer: 'blue', isAnswerCorrect: true, pointsAwarded: 7, currentScore: 7 });
+      });
+
+      act(() => { jest.advanceTimersByTime(3000); });
+      expect(screen.getByTestId('result-correct')).toHaveStyle({ visibility: 'hidden' });
+
+      act(() => { jest.advanceTimersByTime(3000); });
+      expect(screen.getByTestId('result-correct')).toHaveStyle({ visibility: 'visible' });
+      expect(screen.getByTestId('result-correct')).not.toHaveAttribute('aria-hidden', 'true');
+    });
+
+    it('reveals points line after 9 seconds', () => {
+      renderGameBox();
+
+      const gameResolvedHandler = gameModule.onGameResolved.mock.calls[0][0];
+      act(() => {
+        gameResolvedHandler({ teamAnswer: 'blue', isAnswerCorrect: true, pointsAwarded: 7, currentScore: 7 });
+      });
+
+      act(() => { jest.advanceTimersByTime(6000); });
+      expect(screen.getByTestId('result-points')).toHaveStyle({ visibility: 'hidden' });
+
+      act(() => { jest.advanceTimersByTime(3000); });
+      expect(screen.getByTestId('result-points')).toHaveStyle({ visibility: 'visible' });
+      expect(screen.getByTestId('result-points')).not.toHaveAttribute('aria-hidden', 'true');
+    });
+
+    it('hides all result lines immediately when a new problem arrives mid-reveal', () => {
+      renderGameBox();
+
+      const gameResolvedHandler = gameModule.onGameResolved.mock.calls[0][0];
+      const problemUpdateHandler = gameModule.onProblemUpdate.mock.calls[0][0];
+
+      act(() => {
+        gameResolvedHandler({ teamAnswer: 'blue', isAnswerCorrect: true, pointsAwarded: 7, currentScore: 7 });
+      });
+
+      // Advance past the first reveal (answer line is now visible)
+      act(() => { jest.advanceTimersByTime(3000); });
+      expect(screen.getByTestId('result-answer')).toHaveStyle({ visibility: 'visible' });
+
+      // New problem arrives mid-reveal — timers should be cancelled and lines hidden
+      act(() => {
+        problemUpdateHandler({ block: { name: 'block1' }, problem: 'problem1' });
+      });
+
+      expect(screen.getByTestId('result-answer')).toHaveStyle({ visibility: 'hidden' });
+      expect(screen.getByTestId('result-correct')).toHaveStyle({ visibility: 'hidden' });
+      expect(screen.getByTestId('result-points')).toHaveStyle({ visibility: 'hidden' });
+
+      // Remaining timer time elapses — nothing should re-appear
+      act(() => { jest.advanceTimersByTime(6000); });
+      expect(screen.getByTestId('result-answer')).toHaveStyle({ visibility: 'hidden' });
+      expect(screen.getByTestId('result-correct')).toHaveStyle({ visibility: 'hidden' });
+      expect(screen.getByTestId('result-points')).toHaveStyle({ visibility: 'hidden' });
+    });
   });
 
    describe('countdown audio', () => {

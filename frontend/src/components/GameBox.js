@@ -30,6 +30,7 @@ function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef, classN
   const [userInteracted, setUserInteracted] = useState(false);
   const { chimesConfig } = useChimesConfig();
   const countdownAudioRef = useRef(null);
+  const revealTimersRef = useRef([]);
 
   useEffect(() => {
     const audio = new Audio("/sounds/countdown.mp3");
@@ -60,27 +61,34 @@ function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef, classN
       setTeamAnswer(answer);
     };
 
+    const clearRevealTimers = () => {
+      revealTimersRef.current.forEach(clearTimeout);
+      revealTimersRef.current = [];
+    };
+
     const handleGameResolved = (resolution) => {
+      clearRevealTimers();
       setFinalAnswer("");
       setIsAnswerCorrect(null);
       setPointsAwarded(null);
 
-      setTimeout(() => {
+      revealTimersRef.current.push(setTimeout(() => {
         setShowResults(true);
         setFinalAnswer(resolution.teamAnswer);
 
-        setTimeout(() => {
+        revealTimersRef.current.push(setTimeout(() => {
           setIsAnswerCorrect(resolution.isAnswerCorrect);
 
-          setTimeout(() => {
+          revealTimersRef.current.push(setTimeout(() => {
             setPointsAwarded(resolution.pointsAwarded);
             setTeamScore(resolution.currentScore);
-          }, 3000);
-        }, 3000);
-      }, 3000);
+          }, 3000));
+        }, 3000));
+      }, 3000));
     };
 
     const handleProblemUpdate = ({ block, problem }) => {
+      clearRevealTimers();
       setCurrentBlock(block);
       setCurrentProblem(problem);
       setShowResults(false);
@@ -92,6 +100,7 @@ function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef, classN
     onProblemUpdate(handleProblemUpdate);
 
     return () => {
+      clearRevealTimers();
       offTimerUpdate(handleTimerUpdate);
       offSetAnswer(handleSetAnswer);
       offGameResolved(handleGameResolved);
@@ -132,6 +141,10 @@ function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef, classN
     }
   };
 
+  const showAnswerLine = showResults;
+  const showCorrectLine = showResults && isAnswerCorrect != null;
+  const showPointsLine = showResults && pointsAwarded != null;
+
   return (
     <div className={className ?? "col-md-6"}>
       <div className="card">
@@ -149,26 +162,19 @@ function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef, classN
               t("loading_problem")
             )}
           </div>
-          {showResults && (
-            <p className="mb-1">
-              <b>
-                {t("team_answer_was")} {finalAnswer}
-              </b>
-            </p>
-          )}
-          {showResults && isAnswerCorrect != null && (
-            <p className="mb-1">
-              <b>
-                {t("the_answer_was")}{" "}
-                {isAnswerCorrect ? t("correct") : t("incorrect")}
-              </b>
-            </p>
-          )}
-          {showResults && pointsAwarded != null && (
-            <p className="mb-1">
-              <b>{t("you_earned_points", { count: pointsAwarded })}</b>
-            </p>
-          )}
+          <p data-testid="result-answer" className="mb-1" style={{ visibility: showAnswerLine ? "visible" : "hidden" }} aria-hidden={!showAnswerLine}>
+            <b>{showAnswerLine ? <>{t("team_answer_was")} {finalAnswer}</> : null}</b>
+          </p>
+          <p data-testid="result-correct" className="mb-1" style={{ visibility: showCorrectLine ? "visible" : "hidden" }} aria-hidden={!showCorrectLine}>
+            <b>
+              {showCorrectLine
+                ? <>{t("the_answer_was")}{" "}{isAnswerCorrect ? t("correct") : t("incorrect")}</>
+                : null}
+            </b>
+          </p>
+          <p data-testid="result-points" className="mb-1" style={{ visibility: showPointsLine ? "visible" : "hidden" }} aria-hidden={!showPointsLine}>
+            <b>{showPointsLine ? t("you_earned_points", { count: pointsAwarded }) : null}</b>
+          </p>
           <p
             className={`mt-3 ${
               countdown === 0 ? "text-danger" : ""
