@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ScriptsPanel from '../ScriptsPanel';
 import { renderWithProviders } from '../../test-utils/test-utils';
@@ -55,6 +55,31 @@ describe('ScriptsPanel', () => {
     );
     await userEvent.click(screen.getByText('hello'));
     expect(mockChatBoxRef.current.startTypingSimulation).toHaveBeenCalledWith('hello', expect.any(Number));
+  });
+
+  it('collapses all groups and resets button when currentScript changes', async () => {
+    const mockScript2 = {
+      message_groups: {
+        agree: { messages: ['sure'] },
+      },
+    };
+
+    const { rerender } = renderWithProviders(
+      <ScriptsPanel currentScript={mockScript} chatBoxRef={mockChatBoxRef} typingWpm={60} />
+    );
+
+    // Expand all groups
+    await userEvent.click(screen.getByText('Expand All'));
+    expect(screen.getByText('Collapse All')).toBeInTheDocument();
+    screen.getAllByRole('group').forEach(el => expect(el).toHaveAttribute('open'));
+
+    // Switch to a new script — act needed: useEffect fires setAreScriptsCollapsed after rerender
+    await act(async () => {
+      rerender(<ScriptsPanel currentScript={mockScript2} chatBoxRef={mockChatBoxRef} typingWpm={60} />);
+    });
+
+    expect(screen.getByText('Expand All')).toBeInTheDocument();
+    screen.getAllByRole('group').forEach(el => expect(el).not.toHaveAttribute('open'));
   });
 
   it('shows not-allowed cursor while simulating', async () => {

@@ -10,6 +10,15 @@ function ScriptsPanel({ currentScript, chatBoxRef, typingWpm }) {
 
   useEffect(() => () => clearTimeout(simulatingTimerRef.current), []);
 
+  useEffect(() => {
+    clearTimeout(simulatingTimerRef.current);
+    setIsSimulating(false);
+    scriptsContainerRef.current?.querySelectorAll("details").forEach((el) => {
+      el.open = false;
+    });
+    setAreScriptsCollapsed(true);
+  }, [currentScript]);
+
   if (!currentScript) return null;
 
   const handleToggleAll = () => {
