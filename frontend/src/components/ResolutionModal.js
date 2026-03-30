@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+
 import Modal from "./Modal";
 import { setGameResolution } from "../realtime/game";
 import { RESOLUTION_TYPES } from "../constants/resolutionTypes";

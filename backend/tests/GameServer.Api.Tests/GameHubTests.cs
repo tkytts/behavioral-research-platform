@@ -160,7 +160,7 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
         var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
         await PollUntilAsync(() =>
         {
-            var files = Directory.GetFiles(settings.LogPath, "*.csv");
+            var files = Directory.GetFiles(settings.LogPath, "*.csv", SearchOption.AllDirectories);
             var combined = string.Concat(files.Select(f => File.ReadAllText(f)));
             return combined.Contains(TelemetryAction.BlockInterrupts) && combined.Contains(",3,");
         }, reason: "telemetry file with BlockInterrupts and count 3 was not written");

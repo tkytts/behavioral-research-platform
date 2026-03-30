@@ -1,4 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
+
 import { useConnectionStatus } from '../useConnectionStatus';
 import { onConnectionStatusChange } from '../../connection';
 

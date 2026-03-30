@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
-import i18n from 'i18next';
+import { createInstance } from 'i18next';
 
 import ExperimenterNotes from '../ExperimenterNotes';
 
-const testI18n = i18n.createInstance();
+const testI18n = createInstance();
 testI18n.use(initReactI18next).init({
   lng: 'en',
   fallbackLng: 'en',

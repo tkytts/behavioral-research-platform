@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useConnectionStatus } from "../hooks/useConnectionStatus";
 
+import { useConnectionStatus } from "../hooks/useConnectionStatus";
 import ChatBox from "../components/ChatBox";
 import GameBox from "../components/GameBox";
 import Modal from "../components/Modal";

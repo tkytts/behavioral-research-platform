@@ -1,4 +1,5 @@
 import { screen, fireEvent } from '@testing-library/react';
+
 import ResolutionModal from '../ResolutionModal';
 import { renderWithProviders } from '../../test-utils/test-utils';
 

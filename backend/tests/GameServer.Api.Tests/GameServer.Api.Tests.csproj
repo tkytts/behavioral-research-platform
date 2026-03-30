@@ -29,4 +29,8 @@
     <ProjectReference Include="..\..\src\GameServer.Api\GameServer.Api.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Resources\scripts.json" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+
 </Project>

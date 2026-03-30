@@ -1,5 +1,6 @@
-import { screen, act } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
 import ScriptsPanel from '../ScriptsPanel';
 import { renderWithProviders } from '../../test-utils/test-utils';
 
@@ -24,7 +25,7 @@ describe('ScriptsPanel', () => {
     const { container } = renderWithProviders(
       <ScriptsPanel currentScript={null} chatBoxRef={mockChatBoxRef} typingWpm={60} />
     );
-    expect(container.firstChild).toBeNull();
+    expect(container).toBeEmptyDOMElement();
   });
 
   it('renders script groups when currentScript is provided', () => {
@@ -73,12 +74,9 @@ describe('ScriptsPanel', () => {
     expect(screen.getByText('Collapse All')).toBeInTheDocument();
     screen.getAllByRole('group').forEach(el => expect(el).toHaveAttribute('open'));
 
-    // Switch to a new script — act needed: useEffect fires setAreScriptsCollapsed after rerender
-    await act(async () => {
-      rerender(<ScriptsPanel currentScript={mockScript2} chatBoxRef={mockChatBoxRef} typingWpm={60} />);
-    });
-
-    expect(screen.getByText('Expand All')).toBeInTheDocument();
+    // Switch to a new script — findByText awaits the useEffect that fires setAreScriptsCollapsed
+    rerender(<ScriptsPanel currentScript={mockScript2} chatBoxRef={mockChatBoxRef} typingWpm={60} />);
+    await screen.findByText('Expand All');
     screen.getAllByRole('group').forEach(el => expect(el).not.toHaveAttribute('open'));
   });
 

@@ -67,10 +67,10 @@ const InputModal = ({ onUnderstood, inputRef, text }) => {
 
     return (
         <div>
-            <div data-testid="top-overlay" style={topOverlay}></div>
-            <div data-testid="bottom-overlay" style={bottomOverlay}></div>
-            <div data-testid="left-overlay" style={leftOverlay}></div>
-            <div data-testid="right-overlay" style={rightOverlay}></div>
+            <div data-testid="overlay-top" style={topOverlay}></div>
+            <div data-testid="overlay-bottom" style={bottomOverlay}></div>
+            <div data-testid="overlay-left" style={leftOverlay}></div>
+            <div data-testid="overlay-right" style={rightOverlay}></div>
             <div style={customStyle}></div>
             <div style={textBoxStyle}>
                 <p>{text}</p>

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+
 import { useFeatureActive, useFeatureConfig } from "../context/FeatureToggleContext";
 import { useConnectionStatus } from "../hooks/useConnectionStatus";
-
 import ChatBox from "../components/ChatBox";
 import GameBox from "../components/GameBox";
 import Modal from "../components/Modal";
@@ -103,11 +103,20 @@ function Experimenter() {
       }
     };
     loadConfederates();
-  }, []);
+  }, [t]);
+
+  const fetchCurrentUser = useCallback(async () => {
+    try {
+      const userData = await getCurrentUser();
+      setCurrentParticipant(JSON.parse(userData));
+    } catch (error) {
+      setInitError(t("error_loading_user"));
+    }
+  }, [t]);
 
   useEffect(() => {
     fetchCurrentUser();
-  }, []);
+  }, [fetchCurrentUser]);
 
   useEffect(() => {
     const loadSuggestions = async () => {
@@ -124,15 +133,6 @@ function Experimenter() {
   const openGameConfigModal = () => setShowGameConfigModal(true);
 
   const closeGameConfigModal = () => setShowGameConfigModal(false);
-
-  const fetchCurrentUser = async () => {
-    try {
-      const userData = await getCurrentUser();
-      setCurrentParticipant(JSON.parse(userData));
-    } catch (error) {
-      setInitError(t("error_loading_user"));
-    }
-  };
 
   const onNextProblemClick = () => {
     clearAnswer();

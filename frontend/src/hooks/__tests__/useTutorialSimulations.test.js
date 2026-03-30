@@ -1,4 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
+
 import useTutorialSimulations from '../useTutorialSimulations';
 
 jest.mock('../../realtime/game', () => ({

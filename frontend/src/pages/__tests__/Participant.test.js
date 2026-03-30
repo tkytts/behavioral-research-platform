@@ -259,15 +259,15 @@ describe('Participant Component', () => {
       await userEvent.type(nameInput, 'Test User');
       await userEvent.click(screen.getByRole('button'));
 
-      await waitFor(() => expect(screen.getByTestId('chat-input')).toBeInTheDocument());
+      await screen.findByTestId('chat-input');
 
       const chatInput = screen.getByTestId('chat-input');
       chatInput.focus();
-      expect(document.activeElement).toBe(chatInput);
+      expect(chatInput).toHaveFocus();
 
       act(() => { confederateHandler('Alice'); });
 
-      expect(document.activeElement).not.toBe(chatInput);
+      expect(chatInput).not.toHaveFocus();
     });
   });
 
@@ -371,15 +371,15 @@ describe('Participant Component', () => {
       await userEvent.type(nameInput, 'Test User');
       await userEvent.click(screen.getByRole('button'));
 
-      await waitFor(() => expect(screen.getByTestId('chat-input')).toBeInTheDocument());
+      await screen.findByTestId('chat-input');
 
       const chatInput = screen.getByTestId('chat-input');
       chatInput.focus();
-      expect(document.activeElement).toBe(chatInput);
+      expect(chatInput).toHaveFocus();
 
       act(() => { endModalHandler(); });
 
-      expect(document.activeElement).not.toBe(chatInput);
+      expect(chatInput).not.toHaveFocus();
       expect(screen.getByTestId('modal')).toBeInTheDocument();
     });
   });

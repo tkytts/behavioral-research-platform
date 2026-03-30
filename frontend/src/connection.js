@@ -1,4 +1,5 @@
 import * as signalR from "@microsoft/signalr";
+
 import config from "./config";
 
 const connection = new signalR.HubConnectionBuilder()

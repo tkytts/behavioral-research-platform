@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+
 import { getFeatures } from "../api/config";
 
 const DEFAULTS = {

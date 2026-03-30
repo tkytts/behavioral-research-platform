@@ -484,7 +484,7 @@ describe('Experimenter Component', () => {
     it('calls updateProblemSelection with problemIndex 0 by default', async () => {
       renderWithProviders(<Experimenter />);
       await userEvent.click(screen.getAllByRole('button')[0]);
-      await waitFor(() => expect(screen.getByText(/game_configuration/i)).toBeInTheDocument());
+      await screen.findByText(/game_configuration/i);
       await userEvent.click(screen.getByText('start'));
       await waitFor(() => {
         expect(mockFunctions.updateProblemSelection).toHaveBeenCalledWith(
@@ -496,7 +496,7 @@ describe('Experimenter Component', () => {
     it('calls updateProblemSelection with selected problemIndex when restarting from mid-block', async () => {
       renderWithProviders(<Experimenter />);
       await userEvent.click(screen.getAllByRole('button')[0]);
-      await waitFor(() => expect(screen.getByText(/game_configuration/i)).toBeInTheDocument());
+      await screen.findByText(/game_configuration/i);
       await userEvent.selectOptions(screen.getByTestId('starting-problem-select'), '3'); // selects displayed option "3" (problem number), which has value 2 (0-based index)
       await userEvent.click(screen.getByText('start'));
       await waitFor(() => {
@@ -757,10 +757,8 @@ describe('Experimenter Component', () => {
     it('should show expected resolution label and value after game is started', async () => {
       renderWithProviders(<Experimenter />);
       await startGame();
-      await waitFor(() => {
-        expect(screen.getByText('Resolution')).toBeInTheDocument();
-        expect(screen.getByText('DNP')).toBeInTheDocument();
-      });
+      await screen.findByText('Resolution');
+      expect(screen.getByText('DNP')).toBeInTheDocument();
     });
 
     it('should display scripts title inline after game is started', async () => {
@@ -782,38 +780,32 @@ describe('Experimenter Component', () => {
     it('should display expand all button inline after game is started', async () => {
       renderWithProviders(<Experimenter />);
       await startGame();
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Expand All' })).toBeInTheDocument();
-      });
+      await screen.findByRole('button', { name: 'Expand All' });
     });
 
     it('should toggle to collapse all button after clicking expand all', async () => {
       renderWithProviders(<Experimenter />);
       await startGame();
-      await waitFor(() => expect(screen.getByRole('button', { name: 'Expand All' })).toBeInTheDocument());
+      await screen.findByRole('button', { name: 'Expand All' });
 
       await userEvent.click(screen.getByRole('button', { name: 'Expand All' }));
 
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Collapse All' })).toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: 'Expand All' })).not.toBeInTheDocument();
-      });
+      await screen.findByRole('button', { name: 'Collapse All' });
+      expect(screen.queryByRole('button', { name: 'Expand All' })).not.toBeInTheDocument();
     });
 
     it('should toggle back to expand all button after clicking collapse all', async () => {
       renderWithProviders(<Experimenter />);
       await startGame();
-      await waitFor(() => expect(screen.getByRole('button', { name: 'Expand All' })).toBeInTheDocument());
+      await screen.findByRole('button', { name: 'Expand All' });
 
       await userEvent.click(screen.getByRole('button', { name: 'Expand All' }));
-      await waitFor(() => expect(screen.getByRole('button', { name: 'Collapse All' })).toBeInTheDocument());
+      await screen.findByRole('button', { name: 'Collapse All' });
 
       await userEvent.click(screen.getByRole('button', { name: 'Collapse All' }));
 
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Expand All' })).toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: 'Collapse All' })).not.toBeInTheDocument();
-      });
+      await screen.findByRole('button', { name: 'Expand All' });
+      expect(screen.queryByRole('button', { name: 'Collapse All' })).not.toBeInTheDocument();
     });
 
     it('should show suggestion label after game is started', async () => {

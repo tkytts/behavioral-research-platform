@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+
 import Modal from "./Modal";
 
 function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, confederatesMaleStart, initialConfederateName, initialGender, maxProblemsPerBlock = 5 }) {

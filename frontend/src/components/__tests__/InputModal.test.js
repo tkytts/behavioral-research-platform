@@ -74,10 +74,10 @@ describe('InputModal', () => {
       onUnderstood: jest.fn()
     });
 
-    const topStrip = screen.getByTestId('top-overlay');
-    const bottomStrip = screen.getByTestId('bottom-overlay');
-    const leftStrip = screen.getByTestId('left-overlay');
-    const rightStrip = screen.getByTestId('right-overlay');
+    const topStrip = screen.getByTestId('overlay-top');
+    const bottomStrip = screen.getByTestId('overlay-bottom');
+    const leftStrip = screen.getByTestId('overlay-left');
+    const rightStrip = screen.getByTestId('overlay-right');
 
     // INSET = 6; highlightTop = inputPosition.top - INSET = 100 - 6 = 94
     expect(topStrip.style.height).toBe('94px');
