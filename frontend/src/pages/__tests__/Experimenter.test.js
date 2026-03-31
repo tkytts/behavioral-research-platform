@@ -882,7 +882,7 @@ describe('Experimenter Component', () => {
       });
     });
 
-    it('should have default max time of 90 seconds', async () => {
+    it('should have default max time of 75 seconds', async () => {
       renderWithProviders(<Experimenter />);
 
       const startButton = screen.getAllByRole('button')[0];
@@ -891,7 +891,7 @@ describe('Experimenter Component', () => {
       await waitFor(() => {
         const spinbuttons = screen.getAllByRole('spinbutton');
         const timeInput = spinbuttons[1];
-        expect(timeInput).toHaveValue(90);
+        expect(timeInput).toHaveValue(75);
       });
     });
 
