@@ -97,10 +97,11 @@ function Participant() {
               type="text"
               className="form-control"
               placeholder={t("your_name")}
+              data-testid="name-input"
               value={currentUser}
               onChange={(e) => setCurrentUser(e.target.value)}
             />
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn btn-primary" data-testid="name-submit">
               {t('set_name')}
             </button>
           </form>
@@ -108,7 +109,7 @@ function Participant() {
       )}
 
       {usernameSet && !confederateName && !showGameEndedModal && (
-        <div className="modal" style={modalStyle}>
+        <div className="modal" style={modalStyle} data-testid="waiting-modal">
           <div className="modal-content" style={modalContentStyle}>
             <p>{t('waiting_for_other_player')}</p>
             {pollErrorCount >= 5 && <p className="text-warning">{t('waiting_network_issue')}</p>}
@@ -117,12 +118,12 @@ function Participant() {
       )}
 
       {usernameSet && confederateName && !ready && (
-        <div className="modal" style={modalStyle}>
+        <div className="modal" style={modalStyle} data-testid="confederate-modal">
           <div className="modal-content" style={modalContentStyle}>
             <p>{t('you_are_playing_with')}</p>
             <p className="h2"><b>{confederateName}</b></p>
             <p>{t('click_ready_when_you_are_ready_to_start_the_game')}</p>
-            <button className="btn btn-primary btn-narrow" onClick={handleReady}>
+            <button className="btn btn-primary btn-narrow" data-testid="ready-button" onClick={handleReady}>
               {t('ready')}
             </button>
           </div>
@@ -137,8 +138,10 @@ function Participant() {
       )}
       {showGameEndedModal && (
         <Modal>
-          <h2>{t('thank_you_for_participating')}</h2>
-          <p>{t('please_wait_for_the_researcher')}</p>
+          <div data-testid="end-modal">
+            <h2>{t('thank_you_for_participating')}</h2>
+            <p>{t('please_wait_for_the_researcher')}</p>
+          </div>
         </Modal>)}
     </div>
   );

@@ -57,6 +57,7 @@ function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, con
 
   return (
     <Modal>
+      <div data-testid="config-modal">
       <h2 id="modal-title" className="mb-3">
         {t("game_configuration")}
       </h2>
@@ -79,6 +80,7 @@ function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, con
               type="radio"
               name="gender"
               value="F"
+              data-testid="gender-female"
               checked={gender === "F"}
               onChange={(e) => handleGenderChange(e.target.value)}
             />
@@ -89,6 +91,7 @@ function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, con
               type="radio"
               name="gender"
               value="M"
+              data-testid="gender-male"
               checked={gender === "M"}
               onChange={(e) => handleGenderChange(e.target.value)}
             />
@@ -98,7 +101,7 @@ function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, con
       </label>
       <label className="d-block mb-3">
         {t("confederate_name")}:
-        <select className="form-control mt-2" value={confederateName} onChange={(e) => setConfederateName(e.target.value)}>
+        <select className="form-control mt-2" data-testid="confederate-select" value={confederateName} onChange={(e) => setConfederateName(e.target.value)}>
           <option value="" disabled>
             {t("select_confederate_name")}
           </option>
@@ -110,6 +113,7 @@ function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, con
         <input
           type="number"
           className="form-control"
+          data-testid="points-input"
           value={pointsAwarded}
           onChange={(e) => setPointsAwarded(Number(e.target.value))}
         />
@@ -119,6 +123,7 @@ function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, con
         <input
           type="number"
           className="form-control"
+          data-testid="max-time-input"
           value={maxTimeInput}
           onChange={(e) => setMaxTimeInput(Number(e.target.value))}
         />
@@ -159,6 +164,7 @@ function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, con
         {t("starting_problem")}:
         <select
           className="form-control mt-2"
+          data-testid="starting-problem-select"
           value={startingProblemIndex}
           onChange={(e) => setStartingProblemIndex(Number(e.target.value))}
         >
@@ -168,12 +174,13 @@ function GameConfigModal({ isOpen, onClose, onSave, confederatesFemaleStart, con
         </select>
       </label>
       <div className="d-flex justify-content-between">
-        <button className="btn btn-success" onClick={handleSave}>
+        <button className="btn btn-success" data-testid="config-start-btn" onClick={handleSave}>
           {t("start")}
         </button>
-        <button className="btn btn-danger" onClick={onClose}>
+        <button className="btn btn-danger" data-testid="config-cancel-btn" onClick={onClose}>
           {t("cancel")}
         </button>
+      </div>
       </div>
     </Modal>
   );

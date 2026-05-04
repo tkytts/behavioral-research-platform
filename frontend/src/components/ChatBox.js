@@ -208,7 +208,7 @@ const ChatBox = forwardRef(function ChatBox(
             if (chatRef) chatRef.current = el;
           }}>
           {confederateName && <p className="info-box" ref={confederateNameRef}>{isAdmin ? currentUser : confederateName}</p>}
-          <div className="mb-3">
+          <div className="mb-3" data-testid="chat-messages">
             {messages.map((msg, index) => (
               <div key={index} className="mb-2">
                 <strong>{msg.user}:</strong> {msg.text}
@@ -218,7 +218,7 @@ const ChatBox = forwardRef(function ChatBox(
           <div>
             <strong ref={activityRef}>{t('activity')}:</strong>{' '}
             {typingUser && (
-              <nobr className="text-muted">{typingUser} {t('is_typing')}</nobr>
+              <nobr className="text-muted" data-testid="typing-indicator">{typingUser} {t('is_typing')}</nobr>
             )}
             <br></br>
             <p className="info-box">{isAdmin ? confederateName : currentUser}</p>
@@ -230,6 +230,7 @@ const ChatBox = forwardRef(function ChatBox(
               type="text"
               className="form-control me-2"
               placeholder={t('message_placeholder')}
+              data-testid="chat-input"
               value={newMessage}
               onChange={(e) => handleTyping(e)}
               onKeyUp={handleKeyPress}
@@ -238,6 +239,7 @@ const ChatBox = forwardRef(function ChatBox(
             />
             <button
               className="btn btn-primary"
+              data-testid="send-button"
               onClick={handleSend}
               ref={sendButtonRef}
               disabled={disabled}>
@@ -246,6 +248,7 @@ const ChatBox = forwardRef(function ChatBox(
             {isAdmin && (
               <button
                 className="btn btn-warning ms-2"
+                data-testid="clear-chat-btn"
                 onClick={handleClearChat}
               >
                 {t('clear_chat')}

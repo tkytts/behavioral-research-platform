@@ -238,18 +238,18 @@ function Experimenter() {
             <ChatBox ref={chatBoxRef} currentUser={currentParticipant} isAdmin={true} disabled={false} className="col-12" />
           </div>
           <div className="mt-3 d-flex justify-content-center gap-2">
-            <button className="btn btn-primary" onClick={openGameConfigModal}>
+            <button className="btn btn-primary" data-testid="start-game-btn" onClick={openGameConfigModal}>
               {t("start_game")}
             </button>
-            <button className="btn btn-warning" onClick={openResolutionModal}>
+            <button className="btn btn-warning" data-testid="resolve-game-btn" onClick={openResolutionModal}>
               {t("resolve_game")}
             </button>
             {!isLastProblemOfLastBlock && (
-              <button className="btn btn-secondary" onClick={onNextProblemClick}>
+              <button className="btn btn-secondary" data-testid="next-problem-btn" onClick={onNextProblemClick}>
                 {t("next_problem")}
               </button>
             )}
-            <button className="btn btn-danger" onClick={handleEndSession}>
+            <button className="btn btn-danger" data-testid="end-session-btn" onClick={handleEndSession}>
               {t("end_collection")}
             </button>
           </div>

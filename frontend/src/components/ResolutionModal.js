@@ -42,25 +42,26 @@ function ResolutionModal({ isOpen, onClose, onResolved }) {
           type="text"
           className={validationError ? "form-control is-invalid" : "form-control"}
           id="teamAnswer"
+          data-testid="team-answer-input"
           value={teamAnswer}
           onChange={(e) => { setTeamAnswer(e.target.value); setValidationError(""); }}
         />
         {validationError && <div className="invalid-feedback">{validationError}</div>}
       </div>
       <div className="d-flex justify-content-between mb-3">
-        <button className="btn btn-success" onClick={() => resolveGame(RESOLUTION_TYPES.AP)}>
+        <button className="btn btn-success" data-testid="btn-ap" onClick={() => resolveGame(RESOLUTION_TYPES.AP)}>
           {t("AP")}
         </button>
-        <button className="btn btn-warning" onClick={() => resolveGame(RESOLUTION_TYPES.ANP)}>
+        <button className="btn btn-warning" data-testid="btn-anp" onClick={() => resolveGame(RESOLUTION_TYPES.ANP)}>
           {t("ANP")}
         </button>
-        <button className="btn btn-primary" onClick={() => resolveGame(RESOLUTION_TYPES.DP)}>
+        <button className="btn btn-primary" data-testid="btn-dp" onClick={() => resolveGame(RESOLUTION_TYPES.DP)}>
           {t("DP")}
         </button>
-        <button className="btn btn-danger" onClick={() => resolveGame(RESOLUTION_TYPES.DNP)}>
+        <button className="btn btn-danger" data-testid="btn-dnp" onClick={() => resolveGame(RESOLUTION_TYPES.DNP)}>
           {t("DNP")}
         </button>
-        <button className="btn btn-secondary" onClick={() => resolveGame(RESOLUTION_TYPES.TNP)}>
+        <button className="btn btn-secondary" data-testid="btn-tnp" onClick={() => resolveGame(RESOLUTION_TYPES.TNP)}>
           {t("TNP")}
         </button>
       </div>

@@ -146,7 +146,7 @@ function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef, classN
   const showPointsLine = showResults && pointsAwarded != null;
 
   return (
-    <div className={className ?? "col-md-6"}>
+    <div className={className ?? "col-md-6"} data-testid="game-box">
       <div className="card">
         <div className="card-body">
           <p className="mb-3">{t("find_the_solution_to_the_problem")}:</p>
@@ -156,6 +156,7 @@ function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef, classN
                 src={`/problems/${currentBlock.name}/${currentProblem}.png`}
                 alt={t("problem")}
                 className="img-fluid"
+                data-testid="problem-image"
                 style={{ maxWidth: "100%", height: "auto" }}
               />
             ) : (
@@ -180,6 +181,7 @@ function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef, classN
               countdown === 0 ? "text-danger" : ""
             } ${countdown !== null && countdown <= 10 ? "flash-red" : ""}`}
             ref={timerRef}
+            data-testid="timer-display"
           >
             {countdown === null ? null : countdown > 0 ? (
               countdown === 1
@@ -192,7 +194,7 @@ function GameBox({ isAdmin, gamesRef, timerRef, pointsRef, teamAnswerRef, classN
           <p className="mb-1" ref={teamAnswerRef}>
             <b>{t("team_answer")}:</b> {teamAnswer}
           </p>
-          <p className="mb-1" ref={pointsRef}>
+          <p className="mb-1" ref={pointsRef} data-testid="score-display">
             <b>{t("points")}:</b> {teamScore}
           </p>
 
