@@ -1,6 +1,6 @@
-﻿# Problem-Solving Game Platform for Verbal Behavior Research (PSG-VBR)
+﻿# VBGameLab
 
-A full-stack application for running behavioral experiments with real-time communication. Built with React and .NET 8.
+A controlled chat-based cooperative game platform for verbal behavior research. Built with React and .NET 8.
 
 ## Screenshots
 
