@@ -33,10 +33,8 @@ public class JsonBlockRepositoryTests : IDisposable
     [Fact]
     public async Task GetAllAsync_ReturnsEmpty_OnRepeatedCallsWhenFileDoesNotExist()
     {
-        // GetAllAsync returns early (before writing _cache) when the file does not exist,
-        // so every call re-checks File.Exists. This is intentional: a file added after
-        // startup will be picked up on the next call. Do not "fix" this by caching the
-        // not-found result, as that would break callers that create the file post-startup.
+        // With Lazy<Task<>>, the result (empty array) is cached after the first call.
+        // Both calls return empty.
         var repo = new JsonBlockRepository("nonexistent.json");
 
         var first = await repo.GetAllAsync();

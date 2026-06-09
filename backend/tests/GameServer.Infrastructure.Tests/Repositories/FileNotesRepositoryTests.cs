@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GameServer.Application;
+using GameServer.Infrastructure;
 using GameServer.Infrastructure.Repositories;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -15,7 +16,7 @@ public class FileNotesRepositoryTests : IDisposable
     {
         _testLogPath = Path.Combine(Path.GetTempPath(), $"test-notes-{Guid.NewGuid()}");
         var settings = Options.Create(new GameSettings { LogPath = _testLogPath });
-        _sut = new FileNotesRepository(settings, new SessionContext());
+        _sut = new FileNotesRepository(settings, new SessionContext(), string.Empty);
     }
 
     [Fact]
@@ -56,7 +57,7 @@ public class FileNotesRepositoryTests : IDisposable
         var sessionFolder = "Bob_15-03-26";
         var settings = Options.Create(new GameSettings { LogPath = _testLogPath });
         var sessionContext = new SessionContext { SessionFolder = sessionFolder };
-        var sut = new FileNotesRepository(settings, sessionContext);
+        var sut = new FileNotesRepository(settings, sessionContext, string.Empty);
 
         // Act
         await sut.SaveAsync("some notes content");

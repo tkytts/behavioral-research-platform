@@ -1,11 +1,12 @@
 using FluentAssertions;
 using GameServer.Api.Hubs;
 using GameServer.Api.Services;
+using GameServer.Application.DTOs;
 using GameServer.Application.Interfaces;
 using GameServer.Domain.Entities;
-using GameServer.Domain.Constants;
 using GameServer.Domain.Enums;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Xunit;
 
@@ -15,20 +16,19 @@ public class TimerBroadcastServiceTests
 {
     private readonly ITimerService _timerService;
     private readonly IGameService _gameService;
-    private readonly ITelemetryRepository _telemetryRepository;
     private readonly IHubContext<GameHub> _hubContext;
+    private readonly IClientProxy _clientProxy;
 
     public TimerBroadcastServiceTests()
     {
         _timerService = Substitute.For<ITimerService>();
         _gameService = Substitute.For<IGameService>();
-        _telemetryRepository = Substitute.For<ITelemetryRepository>();
         _hubContext = Substitute.For<IHubContext<GameHub>>();
 
         var clients = Substitute.For<IHubClients>();
-        var clientProxy = Substitute.For<IClientProxy>();
+        _clientProxy = Substitute.For<IClientProxy>();
         _hubContext.Clients.Returns(clients);
-        clients.All.Returns(clientProxy);
+        clients.All.Returns(_clientProxy);
 
         var state = new GameState
         {
@@ -38,59 +38,99 @@ public class TimerBroadcastServiceTests
             TeamAnswer = "42"
         };
         _gameService.State.Returns(state);
-        _gameService.ResolveGame(Arg.Any<GameResolutionType>(), Arg.Any<string?>())
-            .Returns(new GameResolution
-            {
-                IsAnswerCorrect = true,
-                PointsAwarded = 100,
-                CurrentScore = 100,
-                TeamAnswer = "42"
-            });
-    }
-
-    [Fact]
-    public async Task OnTimeout_SavesTelemetryEvent_WithAction_Answer_And_ResolutionType()
-    {
-        // Arrange
-        var tcs = new TaskCompletionSource<TelemetryEvent>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _telemetryRepository.SaveAsync(Arg.Any<TelemetryEvent>())
-            .Returns(ci => { tcs.TrySetResult(ci.Arg<TelemetryEvent>()); return Task.CompletedTask; });
-        // Reference discarded intentionally — the lambda registered via OnTimeout+= is what
-        // survives (held by NSubstitute's event list); the service instance itself is not
-        // rooted and can be collected, but the lambda fires synchronously before any GC opportunity.
-        _ = new TimerBroadcastService(_timerService, _gameService, _telemetryRepository, _hubContext);
-
-        // Act
-        _timerService.OnTimeout += Raise.Event<Action>();
-
-        // Assert
-        var evt = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        using (new FluentAssertions.Execution.AssertionScope())
+        _gameService.ResolvePendingGameAsync().Returns(new GameResolution
         {
-            evt.Action.Should().Be(TelemetryAction.GameResolved);
-            evt.Answer.Should().Be("42");
-            evt.Resolution.Should().Be("AP");
-        }
+            IsAnswerCorrect = true,
+            PointsAwarded = 100,
+            CurrentScore = 100,
+            TeamAnswer = "42",
+            ResolutionType = GameResolutionType.AP
+        });
+    }
+
+    private TimerBroadcastService CreateSut() =>
+        new TimerBroadcastService(_timerService, _gameService, _hubContext, NullLogger<TimerBroadcastService>.Instance);
+
+    [Fact]
+    public async Task StartAsync_RegistersOnTickAndOnTimeoutHandlers()
+    {
+        var sut = CreateSut();
+        await sut.StartAsync(CancellationToken.None);
+
+        _timerService.Received(1).OnTick += Arg.Any<Action<int>>();
+        _timerService.Received(1).OnTimeout += Arg.Any<Action>();
     }
 
     [Fact]
-    public async Task OnTimeout_NullTeamAnswer_SavesTelemetryWithNullAnswer()
+    public async Task StopAsync_UnregistersHandlers()
     {
-        // Arrange
-        _gameService.State.TeamAnswer = null;
-        var tcs = new TaskCompletionSource<TelemetryEvent>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _telemetryRepository.SaveAsync(Arg.Any<TelemetryEvent>())
-            .Returns(ci => { tcs.TrySetResult(ci.Arg<TelemetryEvent>()); return Task.CompletedTask; });
-        // Reference discarded intentionally — the lambda registered via OnTimeout+= is what
-        // survives (held by NSubstitute's event list); the service instance itself is not
-        // rooted and can be collected, but the lambda fires synchronously before any GC opportunity.
-        _ = new TimerBroadcastService(_timerService, _gameService, _telemetryRepository, _hubContext);
+        var sut = CreateSut();
+        await sut.StartAsync(CancellationToken.None);
+        await sut.StopAsync(CancellationToken.None);
 
-        // Act
+        _timerService.Received(1).OnTick -= Arg.Any<Action<int>>();
+        _timerService.Received(1).OnTimeout -= Arg.Any<Action>();
+    }
+
+    [Fact]
+    public async Task OnTick_BroadcastsTimerUpdate()
+    {
+        var sut = CreateSut();
+        await sut.StartAsync(CancellationToken.None);
+
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _clientProxy.SendCoreAsync("TimerUpdate", Arg.Any<object?[]?>(), Arg.Any<CancellationToken>())
+            .Returns(ci => { tcs.TrySetResult(true); return Task.CompletedTask; });
+
+        _timerService.OnTick += Raise.Event<Action<int>>(42);
+
+        await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await _clientProxy.Received(1).SendCoreAsync("TimerUpdate", Arg.Is<object?[]?>(a => (int)a![0]! == 42), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task OnTimeout_BroadcastsGameResolved()
+    {
+        var sut = CreateSut();
+        await sut.StartAsync(CancellationToken.None);
+
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _clientProxy.SendCoreAsync("GameResolved", Arg.Any<object?[]?>(), Arg.Any<CancellationToken>())
+            .Returns(ci => { tcs.TrySetResult(true); return Task.CompletedTask; });
+
         _timerService.OnTimeout += Raise.Event<Action>();
 
-        // Assert
-        var evt = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        evt.Answer.Should().BeNull();
+        await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await _gameService.Received(1).ResolvePendingGameAsync();
+        await _clientProxy.Received(1).SendCoreAsync("GameResolved",
+            Arg.Is<object?[]?>(a => ((GameResolutionDto)a![0]!).IsAnswerCorrect == true),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task OnTimeout_WhenResolvePendingGameAsyncReturnsNullAnswer_StillBroadcastsGameResolved()
+    {
+        _gameService.ResolvePendingGameAsync().Returns(new GameResolution
+        {
+            IsAnswerCorrect = false,
+            PointsAwarded = 0,
+            CurrentScore = 0,
+            TeamAnswer = null,
+            ResolutionType = GameResolutionType.TNP
+        });
+
+        var sut = CreateSut();
+        await sut.StartAsync(CancellationToken.None);
+
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _clientProxy.SendCoreAsync("GameResolved", Arg.Any<object?[]?>(), Arg.Any<CancellationToken>())
+            .Returns(ci => { tcs.TrySetResult(true); return Task.CompletedTask; });
+
+        _timerService.OnTimeout += Raise.Event<Action>();
+
+        await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await _clientProxy.Received(1).SendCoreAsync("GameResolved",
+            Arg.Is<object?[]?>(a => ((GameResolutionDto)a![0]!).TeamAnswer == null),
+            Arg.Any<CancellationToken>());
     }
 }

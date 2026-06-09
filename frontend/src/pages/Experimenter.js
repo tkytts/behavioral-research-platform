@@ -17,6 +17,7 @@ import { getConfederatesStart, getScriptForOrder } from "../data/confederates";
 import {
   onTutorialDone,
   offTutorialDone,
+  onReconnected,
   clearAnswer,
   nextProblem as invokeNextProblem,
   resetTimer,
@@ -33,7 +34,8 @@ import {
   gameEnded,
   stopGame,
   telemetryEvent,
-  saveNotes
+  saveNotes,
+  registerExperimenter
 } from "../realtime/game";
 
 function Experimenter() {
@@ -105,10 +107,25 @@ function Experimenter() {
     loadConfederates();
   }, [t]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const keyFromUrl = params.get("key");
+    const key = keyFromUrl ?? sessionStorage.getItem("experimenterKey") ?? "";
+    if (keyFromUrl) sessionStorage.setItem("experimenterKey", keyFromUrl);
+
+    const doRegister = async () => {
+      const ok = await registerExperimenter(key);
+      if (!ok) setInitError(t("error_auth_failed"));
+    };
+    doRegister();
+
+    onReconnected(() => registerExperimenter(key));
+  }, [t]);
+
   const fetchCurrentUser = useCallback(async () => {
     try {
       const userData = await getCurrentUser();
-      setCurrentParticipant(JSON.parse(userData));
+      setCurrentParticipant(userData.name);
     } catch (error) {
       setInitError(t("error_loading_user"));
     }

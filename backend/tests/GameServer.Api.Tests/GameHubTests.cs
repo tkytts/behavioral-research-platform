@@ -4,6 +4,7 @@ using GameServer.Application.DTOs;
 using GameServer.Application.Interfaces;
 using GameServer.Domain.Constants;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -506,5 +507,136 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
         _connection.State.Should().Be(HubConnectionState.Connected);
         gameService.State.ParticipantName.Should().Be("Alice");
         sessionContext.SessionFolder.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task SetParticipantName_SetsSessionFolderWithIsoDate()
+    {
+        // Act
+        await _connection!.InvokeAsync("SetParticipantName", "Alice");
+
+        // Assert: folder should contain yyyy-MM-dd date format
+        var sessionContext = _factory.Services.GetRequiredService<ISessionContext>();
+        sessionContext.SessionFolder.Should().MatchRegex(@"^Alice_\d{4}-\d{2}-\d{2}$");
+    }
+
+    // ── Auth gating tests ──────────────────────────────────────────────────────
+    // These tests override the config to set a non-empty ExperimenterKey.
+
+    [Fact]
+    public async Task RegisterExperimenter_ReturnsFalse_WhenKeyIsWrong()
+    {
+        using var factory = _factory.WithWebHostBuilder(b =>
+            b.UseSetting("Game:ExperimenterKey", "secret"));
+        var client = factory.CreateClient();
+        await using var conn = new HubConnectionBuilder()
+            .WithUrl($"{client.BaseAddress}api/gamehub",
+                o => o.HttpMessageHandlerFactory = _ => factory.Server.CreateHandler())
+            .Build();
+        await conn.StartAsync();
+
+        var result = await conn.InvokeAsync<bool>("RegisterExperimenter", "wrong");
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RegisterExperimenter_ReturnsTrue_WhenKeyIsCorrect()
+    {
+        using var factory = _factory.WithWebHostBuilder(b =>
+            b.UseSetting("Game:ExperimenterKey", "secret"));
+        var client = factory.CreateClient();
+        await using var conn = new HubConnectionBuilder()
+            .WithUrl($"{client.BaseAddress}api/gamehub",
+                o => o.HttpMessageHandlerFactory = _ => factory.Server.CreateHandler())
+            .Build();
+        await conn.StartAsync();
+
+        var result = await conn.InvokeAsync<bool>("RegisterExperimenter", "secret");
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ExperimenterMethod_ThrowsHubException_WhenKeyConfiguredAndNotRegistered()
+    {
+        using var factory = _factory.WithWebHostBuilder(b =>
+            b.UseSetting("Game:ExperimenterKey", "secret"));
+        var client = factory.CreateClient();
+        await using var conn = new HubConnectionBuilder()
+            .WithUrl($"{client.BaseAddress}api/gamehub",
+                o => o.HttpMessageHandlerFactory = _ => factory.Server.CreateHandler())
+            .Build();
+        await conn.StartAsync();
+
+        // StartGame is experimenter-only and should throw when not registered
+        var act = async () => await conn.InvokeAsync("StartGame");
+        await act.Should().ThrowAsync<HubException>().WithMessage("*Not authorized*");
+    }
+
+    [Fact]
+    public async Task ExperimenterMethod_Succeeds_AfterRegisterExperimenter()
+    {
+        using var factory = _factory.WithWebHostBuilder(b =>
+            b.UseSetting("Game:ExperimenterKey", "secret"));
+        var client = factory.CreateClient();
+        await using var conn = new HubConnectionBuilder()
+            .WithUrl($"{client.BaseAddress}api/gamehub",
+                o => o.HttpMessageHandlerFactory = _ => factory.Server.CreateHandler())
+            .Build();
+        await conn.StartAsync();
+
+        await conn.InvokeAsync<bool>("RegisterExperimenter", "secret");
+
+        // Should not throw
+        var status = await WaitForEventAsync<bool>(conn, "StatusUpdate",
+            () => conn.InvokeAsync("StartGame"));
+        status.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task TutorialSharedMethod_Succeeds_WhenIsTutorialWithoutRegistration()
+    {
+        using var factory = _factory.WithWebHostBuilder(b =>
+            b.UseSetting("Game:ExperimenterKey", "secret"));
+        var client = factory.CreateClient();
+        await using var conn = new HubConnectionBuilder()
+            .WithUrl($"{client.BaseAddress}api/gamehub",
+                o => o.HttpMessageHandlerFactory = _ => factory.Server.CreateHandler())
+            .Build();
+        await conn.StartAsync();
+
+        // StartTutorial is open; it sets IsTutorial = true
+        await conn.InvokeAsync("StartTutorial");
+
+        // SetMaxTime is tutorial-shared — should succeed without registration when IsTutorial is true
+        var act = async () => await conn.InvokeAsync("SetMaxTime", 60);
+        await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task StartTutorial_IsRejected_WhenGameIsLive()
+    {
+        // Arrange: start the game (auth disabled with default empty key)
+        await _connection!.InvokeAsync("StartGame");
+        var gameService = _factory.Services.GetRequiredService<IGameService>();
+        gameService.State.IsLive.Should().BeTrue();
+
+        // Act: StartTutorial should be a no-op (not throw, but IsTutorial stays false)
+        await _connection.InvokeAsync("StartTutorial");
+
+        // Assert
+        var sessionContext = _factory.Services.GetRequiredService<ISessionContext>();
+        sessionContext.IsTutorial.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AllMethods_WorkWithoutRegistration_WhenKeyIsEmpty()
+    {
+        // Default factory uses empty ExperimenterKey (auth disabled)
+        // Verify that experimenter-only method works without registration
+        var status = await WaitForEventAsync<bool>(_connection!, "StatusUpdate",
+            () => _connection!.InvokeAsync("StartGame"));
+        status.Should().BeTrue();
     }
 }

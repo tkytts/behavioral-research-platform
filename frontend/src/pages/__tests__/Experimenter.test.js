@@ -31,7 +31,7 @@ jest.mock('../../context/ChimesConfigContext', () => ({
 
 // Mock API modules
 jest.mock('../../api/users', () => ({
-  getCurrentUser: jest.fn(() => Promise.resolve('{"name":"Test Participant"}')),
+  getCurrentUser: jest.fn(() => Promise.resolve({ name: 'Test Participant' })),
 }));
 
 jest.mock('../../api/blocks', () => ({
@@ -86,6 +86,7 @@ jest.mock('../../data/confederates', () => {
 jest.mock('../../realtime/game', () => ({
   onTutorialDone: jest.fn(),
   offTutorialDone: jest.fn(),
+  onReconnected: jest.fn(),
   clearAnswer: jest.fn(),
   nextProblem: jest.fn(),
   resetTimer: jest.fn(),
@@ -104,6 +105,7 @@ jest.mock('../../realtime/game', () => ({
   telemetryEvent: jest.fn(),
   setGameResolution: jest.fn(),
   saveNotes: jest.fn(),
+  registerExperimenter: jest.fn().mockResolvedValue(true),
 }));
 
 // Mock child components
@@ -307,6 +309,11 @@ describe('Experimenter Component', () => {
       ['sugB1', 'sugB2', 'sugB3', 'sugB4', 'sugB5'],
       ['sugC1', 'sugC2', 'sugC3', 'sugC4', 'sugC5'],
     ]);
+
+    const usersMock = require('../../api/users');
+    usersMock.getCurrentUser.mockResolvedValue({ name: 'Test Participant' });
+
+    mockFunctions.registerExperimenter.mockResolvedValue(true);
   });
 
   describe('Initial Render', () => {

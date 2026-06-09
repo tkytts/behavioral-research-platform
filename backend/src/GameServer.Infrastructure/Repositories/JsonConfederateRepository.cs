@@ -18,9 +18,7 @@ public class JsonConfederateRepository : IConfederateRepository
         PropertyNameCaseInsensitive = true
     };
 
-    public JsonConfederateRepository(
-        string femaleFilePath = "Resources/confederates_f.json",
-        string maleFilePath = "Resources/confederates_m.json")
+    public JsonConfederateRepository(string femaleFilePath, string maleFilePath)
     {
         _femaleFilePath = femaleFilePath;
         _maleFilePath = maleFilePath;

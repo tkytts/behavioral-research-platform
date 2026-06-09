@@ -2,6 +2,7 @@ using FluentAssertions;
 using GameServer.Application;
 using GameServer.Domain.Entities;
 using GameServer.Domain.Constants;
+using GameServer.Infrastructure;
 using GameServer.Infrastructure.Repositories;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -17,7 +18,7 @@ public class CsvTelemetryRepositoryTests : IDisposable
     {
         _testLogPath = Path.Combine(Path.GetTempPath(), $"test-logs-{Guid.NewGuid()}");
         var settings = Options.Create(new GameSettings { LogPath = _testLogPath });
-        _sut = new CsvTelemetryRepository(settings, new SessionContext());
+        _sut = new CsvTelemetryRepository(settings, new SessionContext(), string.Empty);
     }
 
     [Fact]
@@ -171,7 +172,7 @@ public class CsvTelemetryRepositoryTests : IDisposable
         var sessionFolder = "Alice_15-03-26";
         var settings = Options.Create(new GameSettings { LogPath = _testLogPath });
         var sessionContext = new SessionContext { SessionFolder = sessionFolder };
-        var sut = new CsvTelemetryRepository(settings, sessionContext);
+        var sut = new CsvTelemetryRepository(settings, sessionContext, string.Empty);
 
         var telemetryEvent = new TelemetryEvent
         {
@@ -196,7 +197,7 @@ public class CsvTelemetryRepositoryTests : IDisposable
         // Arrange
         var settings = Options.Create(new GameSettings { LogPath = _testLogPath });
         var sessionContext = new SessionContext { IsTutorial = true };
-        var sut = new CsvTelemetryRepository(settings, sessionContext);
+        var sut = new CsvTelemetryRepository(settings, sessionContext, string.Empty);
 
         var telemetryEvent = new TelemetryEvent
         {
@@ -219,7 +220,7 @@ public class CsvTelemetryRepositoryTests : IDisposable
         // Arrange
         var settings = Options.Create(new GameSettings { LogPath = _testLogPath });
         var sessionContext = new SessionContext { IsTutorial = false };
-        var sut = new CsvTelemetryRepository(settings, sessionContext);
+        var sut = new CsvTelemetryRepository(settings, sessionContext, string.Empty);
 
         var telemetryEvent = new TelemetryEvent
         {

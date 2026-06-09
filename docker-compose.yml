@@ -4,8 +4,9 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
+      # - Game__ExperimenterKey=<secret>
     volumes:
       - ./backend/logs:/app/logs
     healthcheck:

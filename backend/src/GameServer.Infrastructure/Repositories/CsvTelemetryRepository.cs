@@ -21,9 +21,10 @@ public class CsvTelemetryRepository : ITelemetryRepository
     private readonly ISessionContext _sessionContext;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _fileLocks = new();
 
-    public CsvTelemetryRepository(IOptions<GameSettings> settings, ISessionContext sessionContext)
+    public CsvTelemetryRepository(IOptions<GameSettings> settings, ISessionContext sessionContext, string contentRootPath)
     {
-        _logPath = settings.Value.LogPath;
+        var logPath = settings.Value.LogPath;
+        _logPath = Path.IsPathRooted(logPath) ? logPath : Path.Combine(contentRootPath, logPath);
         _sessionContext = sessionContext;
         Directory.CreateDirectory(_logPath);
     }

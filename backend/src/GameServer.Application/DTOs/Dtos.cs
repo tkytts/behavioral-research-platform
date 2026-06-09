@@ -1,6 +1,11 @@
 namespace GameServer.Application.DTOs;
 
 /// <summary>
+/// DTO for the current participant user.
+/// </summary>
+public record CurrentUserDto(string? Name);
+
+/// <summary>
 /// DTO for chat messages sent via SignalR.
 /// </summary>
 public record ChatMessageDto(string User, string Text, string? Timestamp = null);

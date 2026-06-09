@@ -13,9 +13,10 @@ public class FileChatLogRepository : IChatLogRepository
     private readonly string _logPath;
     private readonly ISessionContext _sessionContext;
 
-    public FileChatLogRepository(IOptions<GameSettings> settings, ISessionContext sessionContext)
+    public FileChatLogRepository(IOptions<GameSettings> settings, ISessionContext sessionContext, string contentRootPath)
     {
-        _logPath = settings.Value.LogPath;
+        var logPath = settings.Value.LogPath;
+        _logPath = Path.IsPathRooted(logPath) ? logPath : Path.Combine(contentRootPath, logPath);
         _sessionContext = sessionContext;
         Directory.CreateDirectory(_logPath);
     }

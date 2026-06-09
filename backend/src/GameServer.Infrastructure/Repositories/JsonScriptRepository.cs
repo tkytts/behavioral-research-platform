@@ -16,7 +16,7 @@ public class JsonScriptRepository : IScriptRepository
         PropertyNameCaseInsensitive = true
     };
 
-    public JsonScriptRepository(string filePath = "Resources/scripts.json")
+    public JsonScriptRepository(string filePath)
     {
         _filePath = filePath;
     }

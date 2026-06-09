@@ -1,6 +1,7 @@
 using FluentAssertions;
 using GameServer.Application;
 using GameServer.Domain.Entities;
+using GameServer.Infrastructure;
 using GameServer.Infrastructure.Repositories;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -16,7 +17,7 @@ public class FileChatLogRepositoryTests : IDisposable
     {
         _testLogPath = Path.Combine(Path.GetTempPath(), $"test-chatlogs-{Guid.NewGuid()}");
         var settings = Options.Create(new GameSettings { LogPath = _testLogPath });
-        _sut = new FileChatLogRepository(settings, new SessionContext());
+        _sut = new FileChatLogRepository(settings, new SessionContext(), string.Empty);
     }
 
     [Fact]
@@ -99,7 +100,7 @@ public class FileChatLogRepositoryTests : IDisposable
         var sessionFolder = "Alice_15-03-26";
         var settings = Options.Create(new GameSettings { LogPath = _testLogPath });
         var sessionContext = new SessionContext { SessionFolder = sessionFolder };
-        var sut = new FileChatLogRepository(settings, sessionContext);
+        var sut = new FileChatLogRepository(settings, sessionContext, string.Empty);
 
         var messages = new List<Message>
         {

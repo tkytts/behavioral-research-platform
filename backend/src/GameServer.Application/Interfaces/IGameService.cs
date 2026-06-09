@@ -59,6 +59,11 @@ public interface IGameService
     GameResolution ResolveGame(GameResolutionType resolutionType, string? teamAnswer);
 
     /// <summary>
+    /// Reads pending resolution state, resolves the game, writes telemetry, clears pending state, and returns the result.
+    /// </summary>
+    Task<GameResolution> ResolvePendingGameAsync();
+
+    /// <summary>
     /// Resets the score to zero.
     /// </summary>
     void ResetScore();

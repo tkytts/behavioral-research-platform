@@ -22,10 +22,9 @@ public class GameState
     private GameResolutionType? _pendingResolutionType;
     private string? _teamAnswer;
 
-    public List<Message> Messages
+    public IReadOnlyList<Message> Messages
     {
-        get { lock (_lock) { return _messages; } }
-        private set { _messages = value; }
+        get { lock (_lock) { return _messages.ToList(); } }
     }
 
     public string? ParticipantName
@@ -89,7 +88,7 @@ public class GameState
     {
         lock (_lock)
         {
-            Messages.Add(message);
+            _messages.Add(message);
         }
     }
 
@@ -100,8 +99,8 @@ public class GameState
     {
         lock (_lock)
         {
-            var messages = Messages.ToList();
-            Messages = new List<Message>();
+            var messages = _messages.ToList();
+            _messages = new List<Message>();
             return messages;
         }
     }
@@ -161,8 +160,8 @@ public class GameState
     /// <summary>
     /// Moves to the next problem within the current block.
     /// </summary>
-    /// <param name="maxProblems">Maximum number of problems in a block (default 5).</param>
-    public void NextProblem(int maxProblems = 5)
+    /// <param name="maxProblems">Maximum number of problems in the current block.</param>
+    public void NextProblem(int maxProblems)
     {
         lock (_lock)
         {

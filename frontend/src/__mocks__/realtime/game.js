@@ -1,6 +1,9 @@
 // Mock for realtime/game.js
 export const connectionReady = Promise.resolve();
 
+// Auth
+export const registerExperimenter = jest.fn().mockResolvedValue(true);
+
 // Event handlers
 export const onTutorialDone = jest.fn();
 export const offTutorialDone = jest.fn();

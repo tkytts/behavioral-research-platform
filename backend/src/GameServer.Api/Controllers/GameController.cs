@@ -1,3 +1,4 @@
+using GameServer.Application.DTOs;
 using GameServer.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,6 +22,10 @@ public class GameController : ControllerBase
     [HttpGet("confederate")]
     public IActionResult GetConfederate() =>
         Ok(_gameService.State.ConfederateName ?? string.Empty);
+
+    [HttpGet("/api/currentUser")]
+    public ActionResult<CurrentUserDto> GetCurrentUser() =>
+        Ok(new CurrentUserDto(_gameService.State.ParticipantName));
 
     [HttpPost("reset")]
     public IActionResult Reset()

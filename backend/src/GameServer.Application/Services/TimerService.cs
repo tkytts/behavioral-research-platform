@@ -77,19 +77,29 @@ public class TimerService : ITimerService, IDisposable
 
     private void Tick()
     {
+        bool timedOut = false;
+        int countdown;
+
         lock (_lock)
         {
             if (!_isRunning) return;
 
             _countdown--;
-            OnTick?.Invoke(_countdown);
+            countdown = _countdown;
 
             if (_countdown <= 0)
             {
-                Stop();
-                OnTimeout?.Invoke();
+                _timer?.Dispose();
+                _timer = null;
+                _isRunning = false;
+                timedOut = true;
             }
         }
+
+        OnTick?.Invoke(countdown);
+
+        if (timedOut)
+            OnTimeout?.Invoke();
     }
 
     public void Dispose()

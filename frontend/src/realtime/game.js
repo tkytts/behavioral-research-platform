@@ -79,6 +79,9 @@ export const onReconnected = (handler) => {
 
 // Commands (invoke)
 
+// Auth
+export const registerExperimenter = (key) => invokeWhenReady("RegisterExperimenter", key);
+
 // Game flow
 export const startTutorial = () => invokeWhenReady("StartTutorial");
 export const startGame = () => invokeWhenReady("StartGame");

@@ -1,10 +1,11 @@
+using GameServer.Application;
 using GameServer.Application.DTOs;
 using GameServer.Application.Interfaces;
 using GameServer.Domain.Constants;
 using GameServer.Domain.Entities;
 using GameServer.Domain.Enums;
-using GameServer.Infrastructure.Helpers;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Options;
 
 namespace GameServer.Api.Hubs;
 
@@ -22,6 +23,7 @@ public class GameHub : Hub
     private readonly INotesRepository _notesRepository;
     private readonly ISessionContext _sessionContext;
     private readonly ILogger<GameHub> _logger;
+    private readonly string _experimenterKey;
 
     public GameHub(
         IGameService gameService,
@@ -31,6 +33,7 @@ public class GameHub : Hub
         IChatLogRepository chatLogRepository,
         INotesRepository notesRepository,
         ISessionContext sessionContext,
+        IOptions<GameSettings> settings,
         ILogger<GameHub> logger)
     {
         _gameService = gameService;
@@ -40,6 +43,7 @@ public class GameHub : Hub
         _chatLogRepository = chatLogRepository;
         _notesRepository = notesRepository;
         _sessionContext = sessionContext;
+        _experimenterKey = settings.Value.ExperimenterKey;
         _logger = logger;
     }
 
@@ -55,6 +59,41 @@ public class GameHub : Hub
         await base.OnDisconnectedAsync(exception);
     }
 
+    #region Auth
+
+    private bool IsExperimenter =>
+        string.IsNullOrEmpty(_experimenterKey) ||
+        Context.Items.ContainsKey("IsExperimenter");
+
+    private void EnsureExperimenter()
+    {
+        if (!IsExperimenter)
+            throw new HubException("Not authorized");
+    }
+
+    private void EnsureExperimenterOrTutorial()
+    {
+        if (!IsExperimenter && !_sessionContext.IsTutorial)
+            throw new HubException("Not authorized");
+    }
+
+    /// <summary>
+    /// Registers this connection as an experimenter using the shared key.
+    /// Returns true on success, false if the key is wrong.
+    /// When auth is disabled (empty key), always returns true.
+    /// </summary>
+    public Task<bool> RegisterExperimenter(string key)
+    {
+        if (string.IsNullOrEmpty(_experimenterKey) || key == _experimenterKey)
+        {
+            Context.Items["IsExperimenter"] = true;
+            return Task.FromResult(true);
+        }
+        return Task.FromResult(false);
+    }
+
+    #endregion
+
     #region Participant Management
 
     /// <summary>
@@ -67,7 +106,7 @@ public class GameHub : Hub
 
         _logger.LogInformation("Participant connected: {Name}", name);
         _gameService.State.ParticipantName = name;
-        _sessionContext.SessionFolder = $"{FilenameHelper.SanitizeForFilename(name)}_{DateTime.UtcNow:dd-MM-yy}";
+        _sessionContext.BeginSession(name);
         return Task.CompletedTask;
     }
 
@@ -76,6 +115,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task SetConfederate(string name)
     {
+        EnsureExperimenterOrTutorial();
         _gameService.State.ConfederateName = name;
         await Clients.All.SendAsync("NewConfederate", name);
     }
@@ -121,6 +161,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task ClearChat()
     {
+        EnsureExperimenterOrTutorial();
         await _chatService.ClearAndSaveAsync();
         await Clients.All.SendAsync("ChatCleared");
     }
@@ -134,6 +175,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task UpdateProblemSelection(ProblemSelectionDto selection)
     {
+        EnsureExperimenter();
         if (selection.ProblemIndex != 0)
         {
             await _telemetryRepository.SaveAsync(new TelemetryEvent
@@ -157,6 +199,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task FirstBlock()
     {
+        EnsureExperimenter();
         var (block, problem) = await _gameService.FirstBlock();
         await BroadcastProblemUpdate(block, problem);
     }
@@ -166,6 +209,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task NextBlock()
     {
+        EnsureExperimenter();
         var (block, problem) = await _gameService.NextBlock();
         await BroadcastProblemUpdate(block, problem);
     }
@@ -175,6 +219,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task NextProblem()
     {
+        EnsureExperimenter();
         await _telemetryRepository.SaveAsync(new TelemetryEvent
         {
             User = _gameService.State.ParticipantName ?? "Unknown",
@@ -192,6 +237,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task TutorialProblem(ProblemUpdateDto data)
     {
+        EnsureExperimenterOrTutorial();
         await Clients.All.SendAsync("ProblemUpdate", data);
     }
 
@@ -220,10 +266,11 @@ public class GameHub : Hub
     /// <summary>
     /// Stops the game timer.
     /// </summary>
-    public Task StopTimer()
+    public async Task StopTimer()
     {
+        EnsureExperimenterOrTutorial();
         _timerService.Stop();
-        return Task.CompletedTask;
+        await Task.CompletedTask;
     }
 
     /// <summary>
@@ -231,6 +278,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task ResetTimer()
     {
+        EnsureExperimenterOrTutorial();
         _timerService.Reset();
         await Clients.All.SendAsync("TimerUpdate", _timerService.CurrentCountdown);
     }
@@ -240,6 +288,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task SetMaxTime(int time)
     {
+        EnsureExperimenterOrTutorial();
         _timerService.MaxTime = time;
         await Clients.All.SendAsync("TimerUpdate", _timerService.CurrentCountdown);
         _logger.LogInformation("Max time set to: {Time}", time);
@@ -251,9 +300,15 @@ public class GameHub : Hub
 
     /// <summary>
     /// Marks the current session as a tutorial, suppressing telemetry writes.
+    /// Rejected if the game is currently live (prevents mid-game tutorial flip).
     /// </summary>
     public Task StartTutorial()
     {
+        if (_gameService.State.IsLive)
+        {
+            _logger.LogWarning("StartTutorial rejected: game is currently live");
+            return Task.CompletedTask;
+        }
         _sessionContext.IsTutorial = true;
         return Task.CompletedTask;
     }
@@ -263,6 +318,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task StartGame()
     {
+        EnsureExperimenter();
         _sessionContext.IsTutorial = false;
         _gameService.StartGame();
 
@@ -283,6 +339,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task StopGame()
     {
+        EnsureExperimenter();
         _gameService.StopGame();
         await Clients.All.SendAsync("StatusUpdate", false);
         _logger.LogInformation("Game is not live");
@@ -294,6 +351,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task SetGameResolution(SetGameResolutionDto data)
     {
+        EnsureExperimenterOrTutorial();
         if (Enum.TryParse<GameResolutionType>(data.GameResolutionType, out var resolutionType))
         {
             var answer = data.TeamAnswer;
@@ -320,6 +378,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task ResetPoints()
     {
+        EnsureExperimenterOrTutorial();
         _gameService.ResetScore();
         await Clients.All.SendAsync("PointsUpdate", 0);
     }
@@ -329,6 +388,7 @@ public class GameHub : Hub
     /// </summary>
     public Task SetPointsAwarded(int points)
     {
+        EnsureExperimenter();
         _gameService.PointsAwarded = points;
         _logger.LogInformation("Points awarded set to: {Points}", points);
         return Task.CompletedTask;
@@ -339,6 +399,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task ClearAnswer()
     {
+        EnsureExperimenter();
         await Clients.All.SendAsync("SetAnswer", string.Empty);
     }
 
@@ -347,6 +408,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task SetAnswer(string answer)
     {
+        EnsureExperimenterOrTutorial();
         await Clients.All.SendAsync("SetAnswer", answer);
     }
 
@@ -355,6 +417,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task BlockFinished()
     {
+        EnsureExperimenter();
         _timerService.Stop();
         _gameService.State.PendingResolutionType = null;
         _gameService.State.TeamAnswer = null;
@@ -378,6 +441,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task GameEnded()
     {
+        EnsureExperimenter();
         await Clients.All.SendAsync("ShowEndModal");
     }
 
@@ -390,6 +454,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task SetChimes(ChimesConfigDto data)
     {
+        EnsureExperimenterOrTutorial();
         _gameService.State.ChimesConfig = new ChimesConfig
         {
             MessageSent = data.MessageSent,
@@ -424,6 +489,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task SaveNotes(string content)
     {
+        EnsureExperimenter();
         await _notesRepository.SaveAsync(content);
     }
 

@@ -12,9 +12,10 @@ public class FileNotesRepository : INotesRepository
     private readonly string _logPath;
     private readonly ISessionContext _sessionContext;
 
-    public FileNotesRepository(IOptions<GameSettings> settings, ISessionContext sessionContext)
+    public FileNotesRepository(IOptions<GameSettings> settings, ISessionContext sessionContext, string contentRootPath)
     {
-        _logPath = settings.Value.LogPath;
+        var logPath = settings.Value.LogPath;
+        _logPath = Path.IsPathRooted(logPath) ? logPath : Path.Combine(contentRootPath, logPath);
         _sessionContext = sessionContext;
     }
 
