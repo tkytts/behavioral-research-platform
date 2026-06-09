@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Xunit;
 
@@ -20,6 +21,18 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
     public GameHubTests(WebApplicationFactory<Program> factory)
     {
         _factory = factory;
+    }
+
+    private string ResolvedLogPath
+    {
+        get
+        {
+            var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
+            var env = _factory.Services.GetRequiredService<IHostEnvironment>();
+            return Path.IsPathRooted(settings.LogPath)
+                ? settings.LogPath
+                : Path.Combine(env.ContentRootPath, settings.LogPath);
+        }
     }
 
     public async Task InitializeAsync()
@@ -158,10 +171,9 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
         await _connection.InvokeAsync("BlockFinished");
 
         // Assert
-        var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
         await PollUntilAsync(() =>
         {
-            var files = Directory.GetFiles(settings.LogPath, "*.csv", SearchOption.AllDirectories);
+            var files = Directory.GetFiles(ResolvedLogPath, "*.csv", SearchOption.AllDirectories);
             var combined = string.Concat(files.Select(f => File.ReadAllText(f)));
             return combined.Contains(TelemetryAction.BlockInterrupts) && combined.Contains(",3,");
         }, reason: "telemetry file with BlockInterrupts and count 3 was not written");
@@ -186,10 +198,9 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
         await _connection.InvokeAsync("SetGameResolution", new SetGameResolutionDto("AP", "42"));
 
         // Assert
-        var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
         await PollUntilAsync(() =>
         {
-            var files = Directory.GetFiles(settings.LogPath, "*.csv", SearchOption.AllDirectories);
+            var files = Directory.GetFiles(ResolvedLogPath, "*.csv", SearchOption.AllDirectories);
             var combined = string.Concat(files.Select(f => File.ReadAllText(f)));
             return combined.Contains(TelemetryAction.TeamAnswerSet) && combined.Contains(",,42");
         }, reason: "telemetry file with TeamAnswerSet was not written");
@@ -200,11 +211,10 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
     {
         // Arrange
         await _connection!.InvokeAsync("SetParticipantName", "IntegrationUser");
-        var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
 
         int CountRows(string answer)
         {
-            var files = Directory.GetFiles(settings.LogPath, "*.csv", SearchOption.AllDirectories);
+            var files = Directory.GetFiles(ResolvedLogPath, "*.csv", SearchOption.AllDirectories);
             var lines = files.SelectMany(f => File.ReadAllLines(f));
             return lines.Count(l => l.Contains(TelemetryAction.TeamAnswerSet) && l.Contains($",,{answer}"));
         }
@@ -254,13 +264,12 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
     {
         // Arrange
         await _connection!.InvokeAsync("SetParticipantName", "IntegrationUser");
-        var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
 
         // First submission
         await _connection.InvokeAsync("SetGameResolution", new SetGameResolutionDto("AP", "42"));
         await PollUntilAsync(() =>
         {
-            var files = Directory.GetFiles(settings.LogPath, "*.csv", SearchOption.AllDirectories);
+            var files = Directory.GetFiles(ResolvedLogPath, "*.csv", SearchOption.AllDirectories);
             var combined = string.Concat(files.Select(f => File.ReadAllText(f)));
             return combined.Contains(TelemetryAction.TeamAnswerSet) && combined.Contains(",,42");
         }, reason: "first TeamAnswerSet telemetry was not written");
@@ -271,7 +280,7 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
         // Assert — new row appears
         await PollUntilAsync(() =>
         {
-            var files = Directory.GetFiles(settings.LogPath, "*.csv", SearchOption.AllDirectories);
+            var files = Directory.GetFiles(ResolvedLogPath, "*.csv", SearchOption.AllDirectories);
             var combined = string.Concat(files.Select(f => File.ReadAllText(f)));
             return combined.Contains(TelemetryAction.TeamAnswerSet) && combined.Contains(",,99");
         }, reason: "second TeamAnswerSet telemetry row for answer '99' was not written");
@@ -287,10 +296,9 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
         await _connection.InvokeAsync("TelemetryEvent", new TelemetryEventDto("Alice", null, TelemetryAction.Edit, null));
 
         // Assert
-        var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
         await PollUntilAsync(() =>
         {
-            var subfolders = Directory.GetDirectories(settings.LogPath, "Alice_*");
+            var subfolders = Directory.GetDirectories(ResolvedLogPath, "Alice_*");
             return subfolders.Length > 0 && Directory.GetFiles(subfolders[0], "*.csv").Length > 0;
         }, reason: "session subfolder was not created");
     }
@@ -407,11 +415,10 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
         await Task.Delay(500);
 
         // Assert: no CSV file should be written during tutorial
-        var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
-        var subfolders = Directory.GetDirectories(settings.LogPath, "TutorialUser_*");
+        var subfolders = Directory.GetDirectories(ResolvedLogPath, "TutorialUser_*");
         var files = subfolders.Length > 0
             ? Directory.GetFiles(subfolders[0], "*.csv")
-            : Directory.GetFiles(settings.LogPath, "*TutorialUser*.csv");
+            : Directory.GetFiles(ResolvedLogPath, "*TutorialUser*.csv");
         files.Should().BeEmpty();
     }
 
@@ -440,10 +447,9 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
         await _connection.InvokeAsync("UpdateProblemSelection", new ProblemSelectionDto(0, 2));
 
         // Assert
-        var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
         await PollUntilAsync(() =>
         {
-            var files = Directory.GetFiles(settings.LogPath, "*.csv", SearchOption.AllDirectories);
+            var files = Directory.GetFiles(ResolvedLogPath, "*.csv", SearchOption.AllDirectories);
             var combined = string.Concat(files.Select(f => File.ReadAllText(f)));
             return combined.Contains(TelemetryAction.StartingProblemOverride) && combined.Contains(",2,");
         }, reason: "telemetry file with StartingProblemOverride was not written");
@@ -462,10 +468,9 @@ public class GameHubTests : IClassFixture<WebApplicationFactory<Program>>, IAsyn
         await _connection!.InvokeAsync("StartGame");
 
         // Assert: telemetry should fall back to "Unknown" when no participant name is set
-        var settings = _factory.Services.GetRequiredService<IOptions<GameSettings>>().Value;
         await PollUntilAsync(() =>
         {
-            var files = Directory.GetFiles(settings.LogPath, "*.csv", SearchOption.AllDirectories);
+            var files = Directory.GetFiles(ResolvedLogPath, "*.csv", SearchOption.AllDirectories);
             var combined = string.Concat(files.Select(f => File.ReadAllText(f)));
             var lines = combined.Split('\n', StringSplitOptions.RemoveEmptyEntries);
             return lines.Any(line => line.StartsWith("Unknown,") && line.Contains(TelemetryAction.NewGame));
