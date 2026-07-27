@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use VBGameLab in your research, please cite it using the metadata below."
+type: software
+title: "VBGameLab: A controlled chat-based cooperative game platform for verbal behavior research"
+authors:
+  - family-names: Galhardi
+    given-names: Ágatha Lara
+    orcid: "https://orcid.org/0000-0002-2742-7253"
+    affiliation: "Pontifícia Universidade Católica de São Paulo (PUC-SP)"
+  - name-particle: de
+    family-names: Barros
+    given-names: Eurico Garcia
+license: AGPL-3.0
+repository-code: "https://github.com/tkytts/VBGameLab"
+# TODO: uncomment and fill in after the first Zenodo release
+# doi: 10.5281/zenodo.XXXXXXX
+# version: 1.0.0
+# date-released: "2026-XX-XX"
