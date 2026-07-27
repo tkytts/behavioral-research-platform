@@ -1,5 +1,7 @@
 ﻿# VBGameLab
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21613695.svg)](https://doi.org/10.5281/zenodo.21613695)
+
 A controlled chat-based cooperative game platform for verbal behavior research. Built with React and .NET 8.
 
 ## Statement of Need
@@ -249,9 +251,9 @@ The authors thank Fernanda S. Oda for sharing the data collection protocol mater
 
 If you use VBGameLab in your research, please cite the software as follows:
 
-Galhardi, A. L., & de Barros, E. G. (2025). VBGameLab: A controlled chat-based cooperative game platform for verbal behavior research (Version [version number]) [Computer software]. Zenodo. https://doi.org/[ZENODO-DOI]
+Galhardi, A. L., & de Barros, E. G. (2025). VBGameLab: A controlled chat-based cooperative game platform for verbal behavior research (Version 1.0.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.21613695
 
-> *Note:* Replace [version number] and [ZENODO-DOI] with the version and DOI assigned at the time of your download. The DOI above will resolve to the specific version you used once the Zenodo record is published.
+> *Note:* The DOI above always resolves to the latest version. To cite the exact version you used, pick its version-specific DOI from the [Zenodo record](https://doi.org/10.5281/zenodo.21613695).
 
 ## Authors
 

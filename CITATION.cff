@@ -12,7 +12,6 @@ authors:
     given-names: Eurico Garcia
 license: AGPL-3.0
 repository-code: "https://github.com/tkytts/VBGameLab"
-# TODO: uncomment and fill in after the first Zenodo release
-# doi: 10.5281/zenodo.XXXXXXX
-# version: 1.0.0
-# date-released: "2026-XX-XX"
+doi: 10.5281/zenodo.21613695
+version: 1.0.0
+date-released: "2026-07-26"
